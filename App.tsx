@@ -1,3 +1,4 @@
+import 'react-native-reanimated';
 import React, { Suspense, useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Font from 'expo-font';

@@ -3,6 +3,7 @@
     "name": "Xpense",
     "slug": "Xpense",
     "version": "1.0.0",
+    "scheme": "xpense",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -27,7 +28,8 @@
     },
     "plugins": [
       "expo-font",
-      "expo-sqlite"
+      "expo-sqlite",
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "eas": {

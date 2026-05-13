@@ -59,6 +59,7 @@ export async function updateTransaction(
   if (patch.method !== undefined)      { fields.push('method = ?');      values.push(patch.method); }
   if (patch.note !== undefined)        { fields.push('note = ?');        values.push(patch.note ?? null); }
   if (patch.loan_id !== undefined)     { fields.push('loan_id = ?');     values.push(patch.loan_id ?? null); }
+  if (patch.created_at !== undefined)  { fields.push('created_at = ?');  values.push(patch.created_at); }
   if (fields.length === 0) return;
   fields.push('updated_at = ?');
   values.push(Date.now(), id);

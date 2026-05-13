@@ -12,7 +12,11 @@ import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
+import { addDays, subDays } from 'date-fns';
+// import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import { formatTransactionDate } from '../utils/date';
 import * as Haptics from 'expo-haptics';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useAddSheetStore } from '../stores/addSheetStore';
@@ -26,7 +30,6 @@ import { createLoan } from '../queries/loans';
 import { RawCategory, RawTransaction } from '../db/types';
 import { Flow, TransactionStatus } from '../types';
 
-const SNAP_POINTS = ['75%'];
 
 const STATUS_OPTIONS: { key: TransactionStatus; label: string }[] = [
   { key: 'completed', label: 'Completed' },
@@ -67,6 +70,7 @@ export function AddSheet() {
   const [status, setStatus] = useState<TransactionStatus>('completed');
   const [personName, setPersonName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const selectedCategory = useMemo(
     () => categories.find((c) => c.id === selectedCategoryId) ?? null,
@@ -81,6 +85,19 @@ export function AddSheet() {
 
   const numericAmount = parseFloat(amount) || 0;
   const canSave = numericAmount > 0 && !!selectedCategoryId;
+
+  const dateLabel = useMemo(
+    () => formatTransactionDate(selectedDate.getTime()),
+    [selectedDate]
+  );
+  const isToday = useMemo(() => {
+    const t = new Date();
+    return (
+      selectedDate.getFullYear() === t.getFullYear() &&
+      selectedDate.getMonth()    === t.getMonth()    &&
+      selectedDate.getDate()     === t.getDate()
+    );
+  }, [selectedDate]);
 
   // Auto-set flow for loan categories
   useEffect(() => {
@@ -107,6 +124,7 @@ export function AddSheet() {
         setSelectedCategoryId(tx.category_id);
         setNote(tx.note ?? '');
         setStatus(tx.status);
+        setSelectedDate(new Date(tx.created_at));
         if (tx.loan_id) {
           db.getFirstAsync<{ person_name: string }>(
             'SELECT person_name FROM loans WHERE id = ?',
@@ -123,6 +141,7 @@ export function AddSheet() {
       setNote('');
       setStatus('completed');
       setPersonName('');
+      setSelectedDate(new Date());
     }
   }, [isOpen, editTransactionId]);
 
@@ -130,6 +149,24 @@ export function AddSheet() {
     if (isLoanCategory) return;
     setFlow(newFlow);
     setSelectedCategoryId(null);
+  }
+
+  // function openDatePicker() {
+  //   DateTimePickerAndroid.open({
+  //     value: selectedDate,
+  //     mode: 'date',
+  //     maximumDate: new Date(),
+  //     onChange: (event, date) => {
+  //       if (event.type === 'set' && date) setSelectedDate(date);
+  //     },
+  //   });
+  // }
+
+  function buildTimestamp(date: Date): number {
+    const now = new Date();
+    const d = new Date(date);
+    d.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+    return d.getTime();
   }
 
   async function handleSave() {
@@ -147,6 +184,7 @@ export function AddSheet() {
           category_id: selectedCategoryId!,
           note: note.trim() || null,
           status,
+          created_at: buildTimestamp(selectedDate),
         });
         showToast('Transaction updated', amountLabel);
       } else {
@@ -169,6 +207,7 @@ export function AddSheet() {
           method: 'cash',
           note: note.trim() || undefined,
           loan_id,
+          created_at: buildTimestamp(selectedDate),
         });
         showToast('Transaction added', amountLabel);
       }
@@ -180,21 +219,33 @@ export function AddSheet() {
     }
   }
 
+  const renderBackdrop = (props: any) => (
+    <BottomSheetBackdrop
+      {...props}
+      appearsOnIndex={0}
+      disappearsOnIndex={-1}
+      pressBehavior="close"
+      enableTouchThrough={false} // 👈 IMPORTANT
+    />
+  );
+
+
   return (
     <BottomSheet
       ref={sheetRef}
       index={-1}
-      snapPoints={SNAP_POINTS}
+      snapPoints={["58%"]}
       enablePanDownToClose
       onClose={closeSheet}
-      backdropComponent={(props) => (
-        <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} />
-      )}
+      backdropComponent={renderBackdrop}
       handleIndicatorStyle={{ backgroundColor: colors.surfaceBorder }}
       backgroundStyle={{ backgroundColor: colors.surfaceCard }}
     >
       <BottomSheetScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: 10 }
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -323,6 +374,31 @@ export function AddSheet() {
           />
         </View>
 
+        {/* ── Date ── */}
+        <Text style={styles.sectionLabel}>Date</Text>
+        <View style={styles.dateRow}>
+          <TouchableOpacity
+            onPress={() => setSelectedDate(d => subDays(d, 1))}
+            style={styles.dateArrow}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.dateArrowText}>‹</Text>
+          </TouchableOpacity>
+          {/* <TouchableOpacity onPress={openDatePicker} style={styles.dateLabelBtn} activeOpacity={0.7}>
+            <Text style={styles.dateLabelText}>{dateLabel}</Text>
+          </TouchableOpacity> */}
+          <TouchableOpacity
+            onPress={() => { if (!isToday) setSelectedDate(d => addDays(d, 1)); }}
+            style={[styles.dateArrow, isToday && styles.dateArrowDisabled]}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            activeOpacity={isToday ? 1 : 0.7}
+            disabled={isToday}
+          >
+            <Text style={[styles.dateArrowText, isToday && styles.dateArrowTextDisabled]}>›</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* ── Status ── */}
         <Text style={styles.sectionLabel}>Status</Text>
         <View style={styles.statusRow}>
@@ -365,7 +441,7 @@ export function AddSheet() {
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 16,
-    paddingTop: 4,
+    paddingTop: 8,
     gap: 14,
   },
   titleRow: {
@@ -550,5 +626,43 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.brandYellow,
     letterSpacing: 0.2,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 6,
+  },
+  dateLabelBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  dateLabelText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 13,
+    color: colors.brandViolet,
+    textDecorationLine: 'underline',
+  },
+  dateArrow: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dateArrowDisabled: {
+    opacity: 0.3,
+  },
+  dateArrowText: {
+    fontFamily: fonts.sansBold,
+    fontSize: 22,
+    color: colors.brandViolet,
+    lineHeight: 26,
+  },
+  dateArrowTextDisabled: {
+    color: colors.textDisabled,
   },
 });
