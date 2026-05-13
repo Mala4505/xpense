@@ -18,6 +18,7 @@ import { createTransaction } from '../../queries/transactions';
 import { createLoan } from '../../queries/loans';
 import { getCategoryById } from '../../queries/categories';
 import { formatAmount } from '../../utils/currency';
+import { useNotificationsStore } from '../../stores/notificationsStore';
 
 interface StepNoteProps {
   onClose: () => void;
@@ -125,6 +126,11 @@ export function StepNote({ onClose }: StepNoteProps) {
 
       const toastSub = `${prefix} ${defaultCurrency} ${formatAmount(numAmount)} · ${categoryName}`;
       showToast('Transaction added', toastSub);
+      useNotificationsStore.getState().addNotification({
+        type: 'transaction',
+        title: categoryName,
+        body: `${prefix} ${defaultCurrency} ${formatAmount(numAmount)}`,
+      });
 
       closeOverlay();
       setTimeout(resetOverlay, 400);

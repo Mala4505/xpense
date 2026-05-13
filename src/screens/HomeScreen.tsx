@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -28,6 +29,9 @@ import {
 import { useRecentTransactions } from '../hooks/useTransactions';
 import { useCategoriesMap } from '../hooks/useCategories';
 import { useSettingsStore } from '../stores/settingsStore';
+import { useNotificationsStore } from '../stores/notificationsStore';
+import { useDataRefreshStore } from '../stores/dataRefreshStore';
+import { NotificationsSheet } from '../components/home/NotificationsSheet';
 import { RootStackParamList } from '../navigation/RootNavigator';
 
 type HomeNavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -45,6 +49,16 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<HomeNavProp>();
 
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    useDataRefreshStore.getState().refresh();
+    setTimeout(() => setRefreshing(false), 600);
+  }, []);
+  const notifications = useNotificationsStore((s) => s.notifications);
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
   const currency = useSettingsStore((s) => s.defaultCurrency);
   const netBalance = useNetBalance();
   const incomeTotal = useIncomeTotal();
@@ -56,11 +70,22 @@ export default function HomeScreen() {
   const categoriesMap = useCategoriesMap();
 
   return (
-    <ScrollView
-      style={[styles.container, { paddingTop: insets.top }]}
-      contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
-      showsVerticalScrollIndicator={false}
-    >
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.brandNavy}
+            colors={[colors.brandNavy]}
+          />
+        }
+        horizontal={false}
+        showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
+      >
       {/* ── Top Nav ── */}
       <View style={styles.topNav}>
         <View style={styles.avatarRow}>
@@ -69,10 +94,15 @@ export default function HomeScreen() {
           </View>
           <Text style={styles.userName}>Aliasger</Text>
         </View>
-        <TouchableOpacity style={styles.bellBtn}>
+        <TouchableOpacity style={styles.bellBtn} onPress={() => setShowNotifications(true)}>
           <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
-          <View style={styles.bellDot} />
+          {unreadCount > 0 && (
+            <View style={styles.bellDot}>
+              <Text style={styles.bellDotText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+            </View>
+          )}
         </TouchableOpacity>
+        <NotificationsSheet visible={showNotifications} onClose={() => setShowNotifications(false)} />
       </View>
 
       {/* ── Balance Section (white) ── */}
@@ -166,6 +196,7 @@ export default function HomeScreen() {
         transition={{ type: 'spring', delay: 280, damping: 22, stiffness: 280 }}
         style={[
           styles.foregroundLayer,
+          { paddingBottom: insets.bottom + 16 },
           Platform.OS === 'ios' ? iosShadow : { elevation: 8 },
         ]}
       >
@@ -232,7 +263,8 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
       </MotiView>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -240,6 +272,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.surfaceCard,
+    overflow: 'hidden',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
 
   // ── Top Nav ──────────────────────────────────────────────────────────────
@@ -284,21 +323,30 @@ const styles = StyleSheet.create({
   },
   bellDot: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    top: 4,
+    right: 4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
     backgroundColor: colors.expense,
     borderWidth: 1.5,
     borderColor: colors.surfaceCard,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 3,
+  },
+  bellDotText: {
+    fontFamily: fonts.sansBold,
+    fontSize: 9,
+    color: '#fff',
+    lineHeight: 11,
   },
 
   // ── Balance Section ───────────────────────────────────────────────────────
   balanceSection: {
     paddingHorizontal: 24,
     paddingTop: 16,
-    paddingBottom: 72,
+    paddingBottom: 52,
     alignItems: 'center',
     backgroundColor: colors.surfaceCard,
   },
@@ -312,7 +360,7 @@ const styles = StyleSheet.create({
   },
   balanceAmount: {
     fontFamily: fonts.monoBold,
-    fontSize: 36,
+    fontSize: 40,
     color: colors.textPrimary,
     letterSpacing: -1,
     marginBottom: 8,
@@ -333,8 +381,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandNavy,
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
-    paddingTop: 28,
-    paddingBottom: 88,
+    paddingTop: 30,
+    paddingBottom: 90,
     paddingHorizontal: 24,
     marginTop: -24,
     zIndex: 2,
@@ -346,8 +394,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandViolet,
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
-    paddingTop: 28,
-    paddingBottom: 96,
+    paddingTop: 30,
+    paddingBottom: 90,
     paddingHorizontal: 24,
     marginTop: -60,
     zIndex: 3,
@@ -359,12 +407,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceCard,
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
-    paddingTop: 32,
+    paddingTop: 24,
     paddingHorizontal: 24,
-    paddingBottom: 32,
     marginTop: -68,
     zIndex: 4,
-    minHeight: 420,
+    flex: 1,
   },
 
   // ── Shared layer card layout ──────────────────────────────────────────────
@@ -392,7 +439,7 @@ const styles = StyleSheet.create({
   },
   layerCardAmount: {
     fontFamily: fonts.mono,
-    fontSize: 20,
+    fontSize: 23,
     color: colors.textInverse,
     letterSpacing: -0.5,
   },
@@ -415,7 +462,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 14,
   },
   sectionTitle: {
     fontFamily: fonts.sansBold,
@@ -460,7 +507,7 @@ const styles = StyleSheet.create({
   quickRow: {
     flexDirection: 'row',
     gap: 10,
-    marginTop: 16,
+    marginTop: 20,
   },
   quickCard: {
     flex: 1,

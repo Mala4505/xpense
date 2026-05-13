@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Dimensions,
   Modal,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Switch,
@@ -24,6 +25,7 @@ import { useAllTransactions } from '../hooks/useTransactions';
 import { useSQLiteContext } from 'expo-sqlite';
 import { createCategory, updateCategory, deleteCategory } from '../queries/categories';
 import { exportTransactionsCSV, ExportTransaction } from '../utils/export';
+import { useDataRefreshStore } from '../stores/dataRefreshStore';
 import { FlowType } from '../types';
 
 // ─── Section header ───────────────────────────────────────────────────────────
@@ -365,6 +367,14 @@ export default function SettingsScreen() {
   const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled);
   const setNotificationsEnabled = useSettingsStore((s) => s.setNotificationsEnabled);
 
+  const refresh = useDataRefreshStore(s => s.refresh);
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    refresh();
+    setTimeout(() => setRefreshing(false), 500);
+  }, [refresh]);
+
   const categories = useCategories();
   const allTx = useAllTransactions();
   const catMap = useCategoriesMap();
@@ -450,6 +460,7 @@ export default function SettingsScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 110 }]}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.brandYellow]} />}
       >
         {/* ── Preferences ── */}
         <MotiView

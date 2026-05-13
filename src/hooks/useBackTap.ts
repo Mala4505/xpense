@@ -3,16 +3,16 @@ import { useEffect, useRef } from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
 
 const SENSITIVITY_MAP = {
-  low: 2.2,
-  medium: 1.8,
-  high: 1.5,
+  low: 1.7,
+  medium: 1.4,
+  high: 1.1,
 };
 
-const TAP_WINDOW_MS  = 400;
+const TAP_WINDOW_MS  = 500;
 const COOLDOWN_MS    = 1500;
-const MIN_TAP_GAP_MS = 150;   // raised from 80 → 150ms
-const QUIET_FLOOR    = 1.3;   // magnitude must drop below this between taps
-const MIN_QUIET_MS   = 80;    // must stay quiet this long before next tap counts
+const MIN_TAP_GAP_MS = 120;
+const QUIET_FLOOR    = 1.0;   // magnitude must drop below this between taps
+const MIN_QUIET_MS   = 60;    // must stay quiet this long before next tap counts
 
 export function useBackTap(onTripleTap: () => void) {
   const sensitivity = useSettingsStore((s) => s.backTapSensitivity);

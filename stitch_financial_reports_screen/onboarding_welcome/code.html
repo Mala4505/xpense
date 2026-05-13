@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Finance Tracker - Welcome</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-container": "#1e1058",
+                    "on-surface": "#201143",
+                    "secondary": "#7042c3",
+                    "on-surface-variant": "#484550",
+                    "on-primary": "#ffffff",
+                    "secondary-fixed": "#ebddff",
+                    "inverse-on-surface": "#f6edff",
+                    "secondary-container": "#aa7dff",
+                    "on-primary-fixed-variant": "#473d82",
+                    "on-secondary": "#ffffff",
+                    "inverse-primary": "#c8bfff",
+                    "background": "#fef7ff",
+                    "on-tertiary-fixed-variant": "#4f4800",
+                    "on-error": "#ffffff",
+                    "primary": "#050027",
+                    "on-primary-container": "#877dc7",
+                    "surface-container-lowest": "#ffffff",
+                    "inverse-surface": "#362859",
+                    "on-background": "#201143",
+                    "tertiary-fixed": "#f9e51d",
+                    "tertiary": "#695f00",
+                    "on-tertiary-fixed": "#201c00",
+                    "on-tertiary-container": "#474000",
+                    "error-container": "#ffdad6",
+                    "on-error-container": "#93000a",
+                    "on-secondary-fixed-variant": "#5825a9",
+                    "outline": "#797581",
+                    "surface-container": "#f3eaff",
+                    "on-primary-fixed": "#1b0b55",
+                    "primary-fixed-dim": "#c8bfff",
+                    "surface-variant": "#e9ddff",
+                    "secondary-fixed-dim": "#d3bbff",
+                    "surface-bright": "#fef7ff",
+                    "surface-container-highest": "#e9ddff",
+                    "surface-container-high": "#eee4ff",
+                    "on-tertiary": "#ffffff",
+                    "surface-tint": "#5f559c",
+                    "tertiary-fixed-dim": "#dbc900",
+                    "tertiary-container": "#bdad00",
+                    "primary-fixed": "#e5deff",
+                    "surface-dim": "#e1d3ff",
+                    "surface": "#fef7ff",
+                    "on-secondary-container": "#3d0088",
+                    "on-secondary-fixed": "#260059",
+                    "surface-container-low": "#f8f1ff",
+                    "outline-variant": "#c9c4d2",
+                    "error": "#ba1a1a",
+                    "yellow-cta": "#EDD900"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-lg": "24px",
+                    "stack-sm": "8px",
+                    "margin-edge": "20px",
+                    "gutter": "16px",
+                    "base": "4px",
+                    "stack-md": "16px"
+            },
+            "fontFamily": {
+                    "body-sm": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "amount-xl": [
+                            "Space Mono"
+                    ],
+                    "display-lg": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "amount-md": [
+                            "Space Mono"
+                    ],
+                    "headline-md": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "body-lg": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "label-caps": [
+                            "Plus Jakarta Sans"
+                    ]
+            },
+            "fontSize": {
+                    "body-sm": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "amount-xl": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "display-lg": [
+                            "30px",
+                            {
+                                    "lineHeight": "38px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "amount-md": [
+                            "18px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "headline-md": [
+                            "22px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-lg": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-caps": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.05em",
+                                    "fontWeight": "600"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #F5F4FC; /* App background */
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-screen flex flex-col font-body-sm text-body-sm text-on-surface antialiased bg-[#F5F4FC] dark:bg-slate-950">
+<!-- Transactional/Onboarding Page: TopAppBar and BottomNavBar Suppressed -->
+<main class="flex-1 flex flex-col px-margin-edge pb-stack-lg max-w-md mx-auto w-full relative h-screen">
+<!-- Hero Illustration Area -->
+<div class="flex-1 flex flex-col justify-center items-center pt-stack-lg">
+<div class="w-full aspect-square rounded-[32px] overflow-hidden mb-stack-lg shadow-[0_8px_30px_rgb(30,16,88,0.08)] bg-white relative">
+<img alt="Financial Growth Illustration" class="w-full h-full object-cover" data-alt="A modern, abstract 3D illustration representing financial growth and calm wealth management. The scene features smooth, stylized golden coins and minimal green plant leaves growing from a clean white pedestal. The background is a soft, airy light purple (#F5F4FC), creating a serene and professional aesthetic. Lighting is bright, diffused, and casts soft shadows, conveying a premium, trustworthy fintech app vibe." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRi8JIDsgbyjrwhTnEiuLndZbr_VW5sCMUKBeNeGYysWZkQUjfc9xtiZPMOgcsGKtXZrh1ak6keyj9TEZPSb0ERFtNCAWHdIpHW6J1_tGswLfsGg-LG8BuT3L1ySsb51hT3LTWwCYjkHep5etfYf3YcfX279xXiFjYU23kOBK-kyt2qKowLGU-6WewJHlu_mXJa53SCo0nd9TOGtZCu97ZO-EtNCagiQjvtp6kiNOsdxcdMa6D14cXmyYmfsyKwF3TaKSUimNHqZU"/>
+<!-- Decorative UI Elements floating over image -->
+<div class="absolute bottom-6 left-6 bg-white/90 backdrop-blur-md rounded-xl p-3 shadow-sm border border-slate-100 flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary text-[18px]">trending_up</span>
+</div>
+<div>
+<div class="font-label-caps text-label-caps text-outline">GROWTH</div>
+<div class="font-amount-md text-amount-md text-primary-container">+14.2%</div>
+</div>
+</div>
+</div>
+<!-- Content Area -->
+<div class="text-center px-4 w-full space-y-stack-md mt-auto mb-stack-lg">
+<h1 class="font-display-lg text-display-lg text-primary-container dark:text-white">Master Your Money</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant dark:text-slate-400">
+                    Track, save, and grow with a calmer approach to finance.
+                </p>
+</div>
+</div>
+<!-- Action Area -->
+<div class="w-full pb-8">
+<button class="w-full bg-yellow-cta text-primary-container font-headline-md text-body-lg font-bold py-4 rounded-xl shadow-[0_4px_14px_0_rgba(30,16,88,0.1)] active:scale-[0.98] transition-transform flex items-center justify-center gap-2">
+                Get Started
+                <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+<div class="text-center mt-stack-md">
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+                    Already have an account? <a class="text-secondary font-semibold ml-1" href="#">Log in</a>
+</p>
+</div>
+</div>
+</main>
+</body></html>

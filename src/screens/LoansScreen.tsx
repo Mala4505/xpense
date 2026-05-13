@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,6 +19,7 @@ import { useLoans } from '../hooks/useCategories';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useOverlayStore } from '../stores/overlayStore';
 import { ComputedLoan } from '../types';
+import { useDataRefreshStore } from '../stores/dataRefreshStore';
 
 type TabType = 'lent' | 'borrowed';
 
@@ -167,6 +169,14 @@ export default function LoansScreen() {
   const loans = useLoans();
   const [activeTab, setActiveTab] = useState<TabType>('lent');
 
+  const refresh = useDataRefreshStore(s => s.refresh);
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    refresh();
+    setTimeout(() => setRefreshing(false), 500);
+  }, [refresh]);
+
   const lentLoans = useMemo(() => loans.filter((l) => l.type === 'lent'), [loans]);
   const borrowedLoans = useMemo(() => loans.filter((l) => l.type === 'borrowed'), [loans]);
 
@@ -208,6 +218,7 @@ export default function LoansScreen() {
           loanStyles.scrollContent,
           { paddingBottom: insets.bottom + 32 },
         ]}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.brandYellow]} />}
       >
         {/* Summary row */}
         <MotiView

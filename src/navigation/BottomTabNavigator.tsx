@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, TouchableOpacity, View, GestureResponderEvent } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,7 +6,6 @@ import { MotiView } from 'moti';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/fonts';
 import { useAddSheetStore } from '../stores/addSheetStore';
-import { useOverlayStore } from '../stores/overlayStore';
 import { AddSheet } from '../components/AddSheet';
 import HomeScreen from '../screens/HomeScreen';
 import HistoryScreen from '../screens/HistoryScreen';
@@ -44,14 +43,7 @@ function DummyScreen() {
 }
 
 export default function BottomTabNavigator() {
-  const isOpen = useAddSheetStore((s) => s.isOpen);
-  const [sheetMounted, setSheetMounted] = useState(false);
-  const openOverlay = useOverlayStore((s) => s.openOverlay);
-  const lastTabPressRef = useRef<{ name: string; time: number } | null>(null);
-
-  useEffect(() => {
-    if (isOpen && !sheetMounted) setSheetMounted(true);
-  }, [isOpen, sheetMounted]);
+  const isSheetOpen = useAddSheetStore((s) => s.isOpen);
 
   return (
     <>
@@ -67,16 +59,6 @@ export default function BottomTabNavigator() {
         <Tab.Screen
           name="Home"
           component={HomeScreen}
-          listeners={({ navigation, route }) => ({
-            tabPress: (e) => {
-              if (!navigation.isFocused()) { lastTabPressRef.current = null; return; }
-              const now = Date.now();
-              const last = lastTabPressRef.current;
-              if (last && last.name === route.name && now - last.time < 400) {
-                e.preventDefault(); lastTabPressRef.current = null; openOverlay();
-              } else { lastTabPressRef.current = { name: route.name, time: now }; }
-            },
-          })}
           options={{
             tabBarLabel: 'Home',
             tabBarIcon: ({ color, size }) => (
@@ -87,16 +69,6 @@ export default function BottomTabNavigator() {
         <Tab.Screen
           name="History"
           component={HistoryScreen}
-          listeners={({ navigation, route }) => ({
-            tabPress: (e) => {
-              if (!navigation.isFocused()) { lastTabPressRef.current = null; return; }
-              const now = Date.now();
-              const last = lastTabPressRef.current;
-              if (last && last.name === route.name && now - last.time < 400) {
-                e.preventDefault(); lastTabPressRef.current = null; openOverlay();
-              } else { lastTabPressRef.current = { name: route.name, time: now }; }
-            },
-          })}
           options={{
             tabBarLabel: 'History',
             tabBarIcon: ({ color, size }) => (
@@ -115,16 +87,6 @@ export default function BottomTabNavigator() {
         <Tab.Screen
           name="Reports"
           component={ReportsScreen}
-          listeners={({ navigation, route }) => ({
-            tabPress: (e) => {
-              if (!navigation.isFocused()) { lastTabPressRef.current = null; return; }
-              const now = Date.now();
-              const last = lastTabPressRef.current;
-              if (last && last.name === route.name && now - last.time < 400) {
-                e.preventDefault(); lastTabPressRef.current = null; openOverlay();
-              } else { lastTabPressRef.current = { name: route.name, time: now }; }
-            },
-          })}
           options={{
             tabBarLabel: 'Reports',
             tabBarIcon: ({ color, size }) => (
@@ -135,16 +97,6 @@ export default function BottomTabNavigator() {
         <Tab.Screen
           name="Settings"
           component={SettingsScreen}
-          listeners={({ navigation, route }) => ({
-            tabPress: (e) => {
-              if (!navigation.isFocused()) { lastTabPressRef.current = null; return; }
-              const now = Date.now();
-              const last = lastTabPressRef.current;
-              if (last && last.name === route.name && now - last.time < 400) {
-                e.preventDefault(); lastTabPressRef.current = null; openOverlay();
-              } else { lastTabPressRef.current = { name: route.name, time: now }; }
-            },
-          })}
           options={{
             tabBarLabel: 'Settings',
             tabBarIcon: ({ color, size }) => (
@@ -153,7 +105,7 @@ export default function BottomTabNavigator() {
           }}
         />
       </Tab.Navigator>
-      {sheetMounted && <AddSheet />}
+      {isSheetOpen && <AddSheet />}
     </>
   );
 }

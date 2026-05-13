@@ -13,7 +13,7 @@ import {
   SpaceMono_700Bold,
 } from '@expo-google-fonts/space-mono';
 import { StatusBar } from 'expo-status-bar';
-import { View } from 'react-native';
+import { View, Linking } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
@@ -85,6 +85,17 @@ function AppContent({ fontsLoaded }: { fontsLoaded: boolean }) {
     })();
     return () => { cancelled = true; };
   }, [notificationsEnabled, currency, db]);
+
+  useEffect(() => {
+    const handleUrl = ({ url }: { url: string }) => {
+      if (url === 'xpense://overlay') {
+        useOverlayStore.getState().openOverlay();
+      }
+    };
+    const sub = Linking.addEventListener('url', handleUrl);
+    Linking.getInitialURL().then(url => { if (url) handleUrl({ url }); });
+    return () => sub.remove();
+  }, []);
 
   return (
     <View style={{ flex: 1 }}>

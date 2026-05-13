@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,6 +22,7 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { CategoryIcon } from '../components/ui/CategoryIcon';
 import { useSQLiteContext } from 'expo-sqlite';
 import { updateTransaction } from '../queries/transactions';
+import { useDataRefreshStore } from '../stores/dataRefreshStore';
 
 function PendingCard({
   transaction,
@@ -189,6 +191,14 @@ export default function PendingScreen() {
   const pending = usePendingTransactions();
   const categoriesMap = useCategoriesMap();
 
+  const refresh = useDataRefreshStore(s => s.refresh);
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    refresh();
+    setTimeout(() => setRefreshing(false), 500);
+  }, [refresh]);
+
   const toReceive = useMemo(
     () => pending.filter((t) => t.flow === 'IN'),
     [pending]
@@ -223,100 +233,103 @@ export default function PendingScreen() {
         <View style={{ width: 22 }} />
       </MotiView>
 
-      {pending.length === 0 ? (
-        <MotiView
-          from={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'spring', delay: 80, damping: 22, stiffness: 280 }}
-          style={pendingStyles.emptyWrap}
-        >
-          <View style={pendingStyles.emptyIcon}>
-            <Ionicons name="checkmark-done-circle-outline" size={40} color={colors.income} />
-          </View>
-          <Text style={pendingStyles.emptyTitle}>All clear!</Text>
-          <Text style={pendingStyles.emptySubtitle}>No pending transactions</Text>
-        </MotiView>
-      ) : (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={[
-            pendingStyles.scrollContent,
-            { paddingBottom: insets.bottom + 32 },
-          ]}
-        >
-          {/* To Receive */}
-          <AnimatePresence>
-            {toReceive.length > 0 && (
-              <MotiView
-                key="to-receive"
-                from={{ opacity: 0, translateY: 8 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{ type: 'spring', delay: 60, damping: 22, stiffness: 280 }}
-              >
-                <SectionHeader
-                  title="To Receive"
-                  count={toReceive.length}
-                  total={toReceiveTotal}
-                  currency={currency}
-                  flow="IN"
-                />
-                <View style={pendingStyles.sectionList}>
-                  {toReceive.map((tx, i) => {
-                    const cat = categoriesMap.get(tx.category_id);
-                    return (
-                      <PendingCard
-                        key={tx.id}
-                        transaction={tx}
-                        categoryName={cat?.name ?? '...'}
-                        categoryColor={cat?.color ?? colors.income}
-                        currency={currency}
-                        animationIndex={i}
-                        onMarkDone={() => {}}
-                      />
-                    );
-                  })}
-                </View>
-              </MotiView>
-            )}
-          </AnimatePresence>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          pendingStyles.scrollContent,
+          { paddingBottom: insets.bottom + 32, flexGrow: 1 },
+        ]}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.brandYellow]} />}
+      >
+        {pending.length === 0 ? (
+          <MotiView
+            from={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: 'spring', delay: 80, damping: 22, stiffness: 280 }}
+            style={pendingStyles.emptyWrap}
+          >
+            <View style={pendingStyles.emptyIcon}>
+              <Ionicons name="checkmark-done-circle-outline" size={40} color={colors.income} />
+            </View>
+            <Text style={pendingStyles.emptyTitle}>All clear!</Text>
+            <Text style={pendingStyles.emptySubtitle}>No pending transactions</Text>
+          </MotiView>
+        ) : (
+          <>
+            {/* To Receive */}
+            <AnimatePresence>
+              {toReceive.length > 0 && (
+                <MotiView
+                  key="to-receive"
+                  from={{ opacity: 0, translateY: 8 }}
+                  animate={{ opacity: 1, translateY: 0 }}
+                  transition={{ type: 'spring', delay: 60, damping: 22, stiffness: 280 }}
+                >
+                  <SectionHeader
+                    title="To Receive"
+                    count={toReceive.length}
+                    total={toReceiveTotal}
+                    currency={currency}
+                    flow="IN"
+                  />
+                  <View style={pendingStyles.sectionList}>
+                    {toReceive.map((tx, i) => {
+                      const cat = categoriesMap.get(tx.category_id);
+                      return (
+                        <PendingCard
+                          key={tx.id}
+                          transaction={tx}
+                          categoryName={cat?.name ?? '...'}
+                          categoryColor={cat?.color ?? colors.income}
+                          currency={currency}
+                          animationIndex={i}
+                          onMarkDone={() => {}}
+                        />
+                      );
+                    })}
+                  </View>
+                </MotiView>
+              )}
+            </AnimatePresence>
 
-          {/* To Pay */}
-          <AnimatePresence>
-            {toPay.length > 0 && (
-              <MotiView
-                key="to-pay"
-                from={{ opacity: 0, translateY: 8 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{ type: 'spring', delay: 100, damping: 22, stiffness: 280 }}
-              >
-                <SectionHeader
-                  title="To Pay"
-                  count={toPay.length}
-                  total={toPayTotal}
-                  currency={currency}
-                  flow="OUT"
-                />
-                <View style={pendingStyles.sectionList}>
-                  {toPay.map((tx, i) => {
-                    const cat = categoriesMap.get(tx.category_id);
-                    return (
-                      <PendingCard
-                        key={tx.id}
-                        transaction={tx}
-                        categoryName={cat?.name ?? '...'}
-                        categoryColor={cat?.color ?? colors.expense}
-                        currency={currency}
-                        animationIndex={toReceive.length + i}
-                        onMarkDone={() => {}}
-                      />
-                    );
-                  })}
-                </View>
-              </MotiView>
-            )}
-          </AnimatePresence>
-        </ScrollView>
-      )}
+            {/* To Pay */}
+            <AnimatePresence>
+              {toPay.length > 0 && (
+                <MotiView
+                  key="to-pay"
+                  from={{ opacity: 0, translateY: 8 }}
+                  animate={{ opacity: 1, translateY: 0 }}
+                  transition={{ type: 'spring', delay: 100, damping: 22, stiffness: 280 }}
+                >
+                  <SectionHeader
+                    title="To Pay"
+                    count={toPay.length}
+                    total={toPayTotal}
+                    currency={currency}
+                    flow="OUT"
+                  />
+                  <View style={pendingStyles.sectionList}>
+                    {toPay.map((tx, i) => {
+                      const cat = categoriesMap.get(tx.category_id);
+                      return (
+                        <PendingCard
+                          key={tx.id}
+                          transaction={tx}
+                          categoryName={cat?.name ?? '...'}
+                          categoryColor={cat?.color ?? colors.expense}
+                          currency={currency}
+                          animationIndex={toReceive.length + i}
+                          onMarkDone={() => {}}
+                        />
+                      );
+                    })}
+                  </View>
+                </MotiView>
+              )}
+            </AnimatePresence>
+          </>
+        )}
+      </ScrollView>
     </View>
   );
 }

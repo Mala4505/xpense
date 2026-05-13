@@ -1,0 +1,106 @@
+<h2>How should budgets work in Xpense?</h2>
+<p class="subtitle">This is the most important design decision — it shapes everything else.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="overall" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:20px;border-radius:8px;">
+      <div style="text-align:center;margin-bottom:12px;">
+        <div style="font-size:11px;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Monthly Budget</div>
+        <div style="font-size:28px;font-weight:700;color:#fff;">₹12,000</div>
+        <div style="font-size:11px;color:#64748b;">of ₹20,000 limit</div>
+      </div>
+      <div style="background:#1e293b;border-radius:6px;height:10px;margin-bottom:8px;overflow:hidden;">
+        <div style="width:60%;background:linear-gradient(90deg,#facc15,#f59e0b);height:100%;border-radius:6px;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;">
+        <span>60% used</span><span>₹8,000 left</span>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:6px;justify-content:center;">
+        <div style="background:#1e293b;border-radius:4px;padding:6px 10px;font-size:10px;color:#94a3b8;">Food</div>
+        <div style="background:#1e293b;border-radius:4px;padding:6px 10px;font-size:10px;color:#94a3b8;">Transport</div>
+        <div style="background:#1e293b;border-radius:4px;padding:6px 10px;font-size:10px;color:#94a3b8;">Shopping</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — One overall budget</h3>
+      <p>Set a single monthly (or weekly) spending cap. All expenses count toward it. Simple to manage — just one number to watch.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="per-category" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:20px;border-radius:8px;">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-bottom:3px;">
+            <span>Food & Dining</span><span>₹3,200 / ₹4,000</span>
+          </div>
+          <div style="background:#1e293b;border-radius:4px;height:7px;overflow:hidden;">
+            <div style="width:80%;background:#ef4444;height:100%;border-radius:4px;"></div>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-bottom:3px;">
+            <span>Transport</span><span>₹800 / ₹2,000</span>
+          </div>
+          <div style="background:#1e293b;border-radius:4px;height:7px;overflow:hidden;">
+            <div style="width:40%;background:#22c55e;height:100%;border-radius:4px;"></div>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-bottom:3px;">
+            <span>Shopping</span><span>₹1,500 / ₹3,000</span>
+          </div>
+          <div style="background:#1e293b;border-radius:4px;height:7px;overflow:hidden;">
+            <div style="width:50%;background:#facc15;height:100%;border-radius:4px;"></div>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-bottom:3px;">
+            <span>Entertainment</span><span>₹600 / ₹1,000</span>
+          </div>
+          <div style="background:#1e293b;border-radius:4px;height:7px;overflow:hidden;">
+            <div style="width:60%;background:#facc15;height:100%;border-radius:4px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Budget per category</h3>
+      <p>Set individual limits for each spending category (Food, Transport, Shopping…). Gives precise insight into where you overspend.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="both" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:20px;border-radius:8px;">
+      <div style="text-align:center;margin-bottom:10px;">
+        <div style="font-size:10px;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;">Total</div>
+        <div style="font-size:22px;font-weight:700;color:#fff;">₹8,100 <span style="font-size:13px;color:#64748b;">/ ₹20,000</span></div>
+        <div style="background:#1e293b;border-radius:6px;height:6px;margin:6px 0;overflow:hidden;">
+          <div style="width:40%;background:#22c55e;height:100%;border-radius:6px;"></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px;margin-top:6px;">
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:#64748b;margin-bottom:2px;"><span>Food</span><span>80%</span></div>
+          <div style="background:#1e293b;border-radius:3px;height:5px;overflow:hidden;"><div style="width:80%;background:#ef4444;height:100%;"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:#64748b;margin-bottom:2px;"><span>Transport</span><span>40%</span></div>
+          <div style="background:#1e293b;border-radius:3px;height:5px;overflow:hidden;"><div style="width:40%;background:#22c55e;height:100%;"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:#64748b;margin-bottom:2px;"><span>Shopping</span><span>50%</span></div>
+          <div style="background:#1e293b;border-radius:3px;height:5px;overflow:hidden;"><div style="width:50%;background:#facc15;height:100%;"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Both: overall + per-category</h3>
+      <p>A master total cap plus individual category limits. Most powerful but takes more effort to set up. Best for serious budgeters.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;font-size:12px;">As a data analyst perspective: Option B (per-category) gives the richest insight and is how most people discover their actual problem areas. Option A is easiest to start with. Option C is ideal long-term but needs more setup.</p>

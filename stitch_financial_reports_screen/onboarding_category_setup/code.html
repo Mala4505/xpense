@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Ledger Setup - Category Setup</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#1e1058",
+                        "on-surface": "#201143",
+                        "secondary": "#7042c3",
+                        "on-surface-variant": "#484550",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed": "#ebddff",
+                        "inverse-on-surface": "#f6edff",
+                        "secondary-container": "#aa7dff",
+                        "on-primary-fixed-variant": "#473d82",
+                        "on-secondary": "#ffffff",
+                        "inverse-primary": "#c8bfff",
+                        "background": "#fef7ff",
+                        "on-tertiary-fixed-variant": "#4f4800",
+                        "on-error": "#ffffff",
+                        "primary": "#050027",
+                        "on-primary-container": "#877dc7",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-surface": "#362859",
+                        "on-background": "#201143",
+                        "tertiary-fixed": "#f9e51d",
+                        "tertiary": "#695f00",
+                        "on-tertiary-fixed": "#201c00",
+                        "on-tertiary-container": "#474000",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed-variant": "#5825a9",
+                        "outline": "#797581",
+                        "surface-container": "#f3eaff",
+                        "on-primary-fixed": "#1b0b55",
+                        "primary-fixed-dim": "#c8bfff",
+                        "surface-variant": "#e9ddff",
+                        "secondary-fixed-dim": "#d3bbff",
+                        "surface-bright": "#fef7ff",
+                        "surface-container-highest": "#e9ddff",
+                        "surface-container-high": "#eee4ff",
+                        "on-tertiary": "#ffffff",
+                        "surface-tint": "#5f559c",
+                        "tertiary-fixed-dim": "#dbc900",
+                        "tertiary-container": "#bdad00",
+                        "primary-fixed": "#e5deff",
+                        "surface-dim": "#e1d3ff",
+                        "surface": "#fef7ff",
+                        "on-secondary-container": "#3d0088",
+                        "on-secondary-fixed": "#260059",
+                        "surface-container-low": "#f8f1ff",
+                        "outline-variant": "#c9c4d2",
+                        "error": "#ba1a1a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-lg": "24px",
+                        "stack-sm": "8px",
+                        "margin-edge": "20px",
+                        "gutter": "16px",
+                        "base": "4px",
+                        "stack-md": "16px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Plus Jakarta Sans"],
+                        "amount-xl": ["Space Mono"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "amount-md": ["Space Mono"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-caps": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "amount-xl": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "display-lg": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "amount-md": ["18px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "headline-md": ["22px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #F5F4FC;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="antialiased text-on-surface min-h-screen flex flex-col max-w-md mx-auto relative pb-[100px]">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-5 py-4 max-w-md mx-auto bg-[#F5F4FC] dark:bg-slate-950 docked full-width top-0 border-none flat no shadows sticky z-10">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden flex items-center justify-center">
+<span class="material-symbols-outlined text-outline">account_circle</span>
+</div>
+<h1 class="text-xl font-bold text-[#1E1058] dark:text-white font-['Plus_Jakarta_Sans'] antialiased tracking-tight">Finance Tracker</h1>
+</div>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-[#1E1058] dark:text-indigo-100 hover:bg-[#EEEAF8] dark:hover:bg-slate-800 transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</header>
+<main class="px-margin-edge flex-1">
+<!-- Header Section -->
+<div class="mt-stack-lg mb-stack-lg">
+<p class="font-label-caps text-label-caps text-outline uppercase mb-stack-sm">Step 5 of 6</p>
+<h2 class="font-display-lg text-display-lg text-on-surface">The Ledger Setup</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-stack-sm">Select the categories you frequently use.</p>
+</div>
+<!-- Progress Indicator -->
+<div class="flex gap-1 mb-stack-lg w-full">
+<div class="h-1 flex-1 bg-primary-container rounded-full opacity-20"></div>
+<div class="h-1 flex-1 bg-primary-container rounded-full opacity-20"></div>
+<div class="h-1 flex-1 bg-primary-container rounded-full opacity-20"></div>
+<div class="h-1 flex-1 bg-primary-container rounded-full opacity-20"></div>
+<div class="h-1 flex-1 bg-primary-container rounded-full"></div>
+<div class="h-1 flex-1 bg-primary-container rounded-full opacity-20"></div>
+</div>
+<!-- Income Section -->
+<section class="mb-stack-lg">
+<div class="flex items-center gap-2 mb-stack-md">
+<div class="w-2 h-2 rounded-full bg-[#22C87A]"></div>
+<h3 class="font-label-caps text-label-caps tracking-wider text-[#22C87A] uppercase">Income</h3>
+</div>
+<div class="grid grid-cols-3 gap-gutter">
+<!-- Selected Card -->
+<button class="relative bg-white rounded-xl p-3 flex flex-col items-center justify-center gap-2 border-2 border-secondary-container shadow-sm active:scale-95 transition-transform">
+<div class="absolute top-1 right-1 w-4 h-4 rounded-full bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[10px] text-white font-bold" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div class="w-10 h-10 rounded-full bg-[#EEEAF8] flex items-center justify-center text-[#22C87A]">
+<span class="material-symbols-outlined">payments</span>
+</div>
+<span class="font-label-caps text-label-caps text-center text-on-surface">Salary</span>
+</button>
+<!-- Unselected Card -->
+<button class="relative bg-white rounded-xl p-3 flex flex-col items-center justify-center gap-2 border border-transparent shadow-sm active:scale-95 transition-transform hover:bg-[#EEEAF8]/50">
+<div class="w-10 h-10 rounded-full bg-[#EEEAF8] flex items-center justify-center text-[#22C87A]">
+<span class="material-symbols-outlined">work</span>
+</div>
+<span class="font-label-caps text-label-caps text-center text-on-surface-variant">Freelance</span>
+</button>
+<button class="relative bg-white rounded-xl p-3 flex flex-col items-center justify-center gap-2 border border-transparent shadow-sm active:scale-95 transition-transform hover:bg-[#EEEAF8]/50">
+<div class="w-10 h-10 rounded-full bg-[#EEEAF8] flex items-center justify-center text-[#22C87A]">
+<span class="material-symbols-outlined">featured_seasonal_and_gifts</span>
+</div>
+<span class="font-label-caps text-label-caps text-center text-on-surface-variant">Gift Received</span>
+</button>
+<!-- Selected Card -->
+<button class="relative bg-white rounded-xl p-3 flex flex-col items-center justify-center gap-2 border-2 border-secondary-container shadow-sm active:scale-95 transition-transform">
+<div class="absolute top-1 right-1 w-4 h-4 rounded-full bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[10px] text-white font-bold" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div class="w-10 h-10 rounded-full bg-[#EEEAF8] flex items-center justify-center text-[#22C87A]">
+<span class="material-symbols-outlined">trending_up</span>
+</div>
+<span class="font-label-caps text-label-caps text-center text-on-surface">Investment</span>
+</button>
+<button class="relative bg-white rounded-xl p-3 flex flex-col items-center justify-center gap-2 border border-transparent shadow-sm active:scale-95 transition-transform hover:bg-[#EEEAF8]/50">
+<div class="w-10 h-10 rounded-full bg-[#EEEAF8] flex items-center justify-center text-[#22C87A]">
+<span class="material-symbols-outlined">add_circle</span>
+</div>
+<span class="font-label-caps text-label-caps text-center text-on-surface-variant">Other Income</span>
+</button>
+</div>
+</section>
+<!-- Expenses Section -->
+<section class="mb-stack-lg">
+<div class="flex items-center gap-2 mb-stack-md">
+<div class="w-2 h-2 rounded-full bg-[#E05C5C]"></div>
+<h3 class="font-label-caps text-label-caps tracking-wider text-[#E05C5C] uppercase">Expenses</h3>
+</div>
+<div class="grid grid-cols-3 gap-gutter">
+<!-- Selected Card -->
+<button class="relative bg-white rounded-xl p-3 flex flex-col items-center justify-center gap-2 border-2 border-secondary-container shadow-sm active:scale-95 transition-transform">
+<div class="absolute top-1 right-1 w-4 h-4 rounded-full bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[10px] text-white font-bold" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div class="w-10 h-10 rounded-full bg-[#EEEAF8] flex items-center justify-center text-[#E05C5C]">
+<span class="material-symbols-outlined">coffee</span>
+</div>
+<span class="font-label-caps text-label-caps text-center text-on-surface">Daily Expenses</span>
+</button>
+<!-- Selected Card -->
+<button class="relative bg-white rounded-xl p-3 flex flex-col items-center justify-center gap-2 border-2 border-secondary-container shadow-sm active:scale-95 transition-transform">
+<div class="absolute top-1 right-1 w-4 h-4 rounded-full bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[10px] text-white font-bold" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div class="w-10 h-10 rounded-full bg-[#EEEAF8] flex items-center justify-center text-[#E05C5C]">
+<span class="material-symbols-outlined">shopping_cart</span>
+</div>
+<span class="font-label-caps text-label-caps text-center text-on-surface">Grocery</span>
+</button>
+<button class="relative bg-white rounded-xl p-3 flex flex-col items-center justify-center gap-2 border border-transparent shadow-sm active:scale-95 transition-transform hover:bg-[#EEEAF8]/50">
+<div class="w-10 h-10 rounded-full bg-[#EEEAF8] flex items-center justify-center text-[#E05C5C]">
+<span class="material-symbols-outlined">receipt_long</span>
+</div>
+<span class="font-label-caps text-label-caps text-center text-on-surface-variant">Bills</span>
+</button>
+<button class="relative bg-white rounded-xl p-3 flex flex-col items-center justify-center gap-2 border border-transparent shadow-sm active:scale-95 transition-transform hover:bg-[#EEEAF8]/50">
+<div class="w-10 h-10 rounded-full bg-[#EEEAF8] flex items-center justify-center text-[#E05C5C]">
+<span class="material-symbols-outlined">medical_services</span>
+</div>
+<span class="font-label-caps text-label-caps text-center text-on-surface-variant">Medical</span>
+</button>
+<!-- Selected Card -->
+<button class="relative bg-white rounded-xl p-3 flex flex-col items-center justify-center gap-2 border-2 border-secondary-container shadow-sm active:scale-95 transition-transform">
+<div class="absolute top-1 right-1 w-4 h-4 rounded-full bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[10px] text-white font-bold" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div class="w-10 h-10 rounded-full bg-[#EEEAF8] flex items-center justify-center text-[#E05C5C]">
+<span class="material-symbols-outlined">volunteer_activism</span>
+</div>
+<span class="font-label-caps text-label-caps text-center text-on-surface">Sadaqah</span>
+</button>
+<button class="relative bg-white rounded-xl p-3 flex flex-col items-center justify-center gap-2 border border-transparent shadow-sm active:scale-95 transition-transform hover:bg-[#EEEAF8]/50">
+<div class="w-10 h-10 rounded-full bg-[#EEEAF8] flex items-center justify-center text-[#E05C5C]">
+<span class="material-symbols-outlined">account_balance</span>
+</div>
+<span class="font-label-caps text-label-caps text-center text-on-surface-variant">Wakaf</span>
+</button>
+<button class="relative bg-white rounded-xl p-3 flex flex-col items-center justify-center gap-2 border border-transparent shadow-sm active:scale-95 transition-transform hover:bg-[#EEEAF8]/50">
+<div class="w-10 h-10 rounded-full bg-[#EEEAF8] flex items-center justify-center text-[#E05C5C]">
+<span class="material-symbols-outlined">real_estate_agent</span>
+</div>
+<span class="font-label-caps text-label-caps text-center text-on-surface-variant">Khumus Paid</span>
+</button>
+<!-- Add Custom Category Button -->
+<button class="col-span-3 mt-stack-sm py-4 border-2 border-dashed border-[#9B6EF0]/40 rounded-xl bg-[#EEEAF8]/30 flex items-center justify-center gap-2 text-secondary active:scale-95 transition-transform hover:bg-[#EEEAF8]/60">
+<span class="material-symbols-outlined">add</span>
+<span class="font-body-sm text-body-sm font-semibold">+ Add custom category</span>
+</button>
+</div>
+</section>
+</main>
+<!-- Pinned Bottom Button -->
+<div class="fixed bottom-0 left-0 w-full z-50 px-margin-edge pb-stack-lg pt-stack-md bg-gradient-to-t from-[#F5F4FC] via-[#F5F4FC] to-transparent max-w-md mx-auto right-0">
+<button class="w-full bg-[#EDD900] text-primary-container font-headline-md text-body-lg py-4 rounded-full shadow-[0_4px_12px_rgba(30,16,88,0.08)] active:scale-95 transition-transform flex items-center justify-center gap-2">
+            Continue
+            <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</body></html>

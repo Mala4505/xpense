@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
+  RefreshControl,
   SectionList,
   StyleSheet,
   Text,
@@ -22,6 +23,7 @@ import { groupTransactionsByDate } from '../utils/date';
 import { useSQLiteContext } from 'expo-sqlite';
 import { deleteTransaction } from '../queries/transactions';
 import { useAddSheetStore } from '../stores/addSheetStore';
+import { useDataRefreshStore } from '../stores/dataRefreshStore';
 
 type FilterType = 'All' | 'Income' | 'Expense' | 'Pending' | 'Partial' | 'Loans';
 
@@ -60,6 +62,14 @@ export default function HistoryScreen() {
   const categoriesMap = useCategoriesMap();
 
   const openSheet = useAddSheetStore((s) => s.openSheet);
+
+  const refresh = useDataRefreshStore(s => s.refresh);
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    refresh();
+    setTimeout(() => setRefreshing(false), 500);
+  }, [refresh]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('All');
@@ -189,6 +199,7 @@ export default function HistoryScreen() {
           ]}
           showsVerticalScrollIndicator={false}
           stickySectionHeadersEnabled={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.brandYellow]} />}
           renderSectionHeader={({ section }) => (
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionHeaderText}>{section.title}</Text>

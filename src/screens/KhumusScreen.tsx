@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
+import { useSQLiteContext } from 'expo-sqlite';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/fonts';
 import { formatAmount } from '../utils/currency';
@@ -18,13 +20,29 @@ import { useKhumusData, useKhumusBreakdown } from '../hooks/useComputed';
 import { useKhumusPaidHistory } from '../hooks/useTransactions';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useOverlayStore } from '../stores/overlayStore';
-
+import { useDataRefreshStore } from '../stores/dataRefreshStore';
 
 export default function KhumusScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const db = useSQLiteContext();
   const currency = useSettingsStore((s) => s.defaultCurrency);
-  const openOverlay = useOverlayStore((s) => s.openOverlay);
+  const openWithPreset = useOverlayStore((s) => s.openWithPreset);
+  const [khumusCatId, setKhumusCatId] = useState<string | undefined>();
+
+  useEffect(() => {
+    db.getFirstAsync<{ id: string }>(
+      `SELECT id FROM categories WHERE name = 'Khumus Paid' LIMIT 1`
+    ).then(r => setKhumusCatId(r?.id ?? undefined));
+  }, [db]);
+
+  const refresh = useDataRefreshStore(s => s.refresh);
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    refresh();
+    setTimeout(() => setRefreshing(false), 500);
+  }, [refresh]);
 
   const { accumulated, paid, due } = useKhumusData();
   const breakdown = useKhumusBreakdown();
@@ -52,6 +70,7 @@ export default function KhumusScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 32 }]}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.brandYellow]} />}
       >
         {/* Stats Cards */}
         <MotiView
@@ -126,7 +145,7 @@ export default function KhumusScreen() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ type: 'spring', delay: 120, damping: 20, stiffness: 300 }}
         >
-          <TouchableOpacity style={styles.payBtn} onPress={openOverlay} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.payBtn} onPress={() => khumusCatId && openWithPreset(khumusCatId, 'OUT')} activeOpacity={0.85}>
             <Ionicons name="checkmark-circle-outline" size={18} color={colors.textPrimary} />
             <Text style={styles.payBtnText}>Pay Khumus</Text>
           </TouchableOpacity>

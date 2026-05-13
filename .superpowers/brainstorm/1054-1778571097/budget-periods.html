@@ -1,0 +1,80 @@
+<h2>How should weekly & monthly budgets relate?</h2>
+<p class="subtitle">You want both — the question is whether they're separate limits or one budget with two views.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="separate" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:16px;border-radius:8px;">
+      <div style="max-width:220px;margin:0 auto;">
+        <div style="display:flex;gap:6px;margin-bottom:10px;">
+          <div style="background:#facc15;border-radius:4px;padding:3px 10px;font-size:8px;color:#000;font-weight:700;">Weekly</div>
+          <div style="background:#1e293b;border-radius:4px;padding:3px 10px;font-size:8px;color:#64748b;">Monthly</div>
+        </div>
+        <div style="background:#1e293b;border-radius:8px;padding:10px;margin-bottom:8px;">
+          <div style="font-size:8px;color:#94a3b8;margin-bottom:2px;">Week 2 of May · Mon–Sun</div>
+          <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:4px;">₹2,800 <span style="font-size:10px;color:#64748b;">/ ₹5,000</span></div>
+          <div style="background:#0f172a;border-radius:4px;height:5px;overflow:hidden;">
+            <div style="width:56%;background:#facc15;height:100%;border-radius:4px;"></div>
+          </div>
+          <div style="font-size:7px;color:#22c55e;margin-top:3px;">56% · ₹2,200 left this week</div>
+        </div>
+        <div style="background:#1e293b;border-radius:4px;padding:6px 8px;font-size:7px;color:#64748b;">Monthly budget: ₹20,000 limit (separate) →</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Two separate budgets</h3>
+      <p>You set a weekly limit (e.g. ₹5,000/week) AND a monthly limit (e.g. ₹20,000/month). Both run independently. You can hit weekly but still be fine monthly — and you get alerted for each separately.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="one-two-views" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:16px;border-radius:8px;">
+      <div style="max-width:220px;margin:0 auto;">
+        <div style="display:flex;gap:6px;margin-bottom:10px;">
+          <div style="background:#1e293b;border-radius:4px;padding:3px 10px;font-size:8px;color:#64748b;">Weekly</div>
+          <div style="background:#facc15;border-radius:4px;padding:3px 10px;font-size:8px;color:#000;font-weight:700;">Monthly</div>
+        </div>
+        <div style="background:#1e293b;border-radius:8px;padding:10px;">
+          <div style="font-size:8px;color:#94a3b8;margin-bottom:2px;">May 2026 · one budget</div>
+          <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:4px;">₹12,400 <span style="font-size:10px;color:#64748b;">/ ₹20,000</span></div>
+          <div style="background:#0f172a;border-radius:4px;height:5px;overflow:hidden;margin-bottom:4px;">
+            <div style="width:62%;background:#facc15;height:100%;border-radius:4px;"></div>
+          </div>
+          <div style="font-size:7px;color:#64748b;margin-bottom:6px;">62% used · ₹7,600 left</div>
+          <div style="font-size:7px;color:#94a3b8;border-top:1px solid #0f172a;padding-top:5px;">Weekly pace: ₹3,100/wk avg — on track ✓</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — One budget, weekly pace shown</h3>
+      <p>You set one monthly limit. The weekly view just tells you your pace — "you're averaging ₹3,100/week, you'll hit your limit in ~2.5 weeks." No separate weekly limit to manage.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="choose-mode" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:16px;border-radius:8px;">
+      <div style="max-width:220px;margin:0 auto;">
+        <div style="background:#1e293b;border-radius:8px;padding:10px;margin-bottom:8px;">
+          <div style="font-size:8px;color:#94a3b8;margin-bottom:6px;">Choose your mode:</div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <div style="background:#facc15;border-radius:4px;padding:5px 8px;font-size:8px;color:#000;font-weight:600;">● Weekly mode — limit per week</div>
+            <div style="background:#0f172a;border-radius:4px;padding:5px 8px;font-size:8px;color:#64748b;border:1px solid #334155;">○ Monthly mode — limit per month</div>
+          </div>
+        </div>
+        <div style="background:#1e293b;border-radius:4px;padding:6px 8px;">
+          <div style="font-size:7px;color:#94a3b8;margin-bottom:3px;">Week 2: ₹2,800 / ₹5,000</div>
+          <div style="background:#0f172a;border-radius:3px;height:4px;overflow:hidden;">
+            <div style="width:56%;background:#facc15;height:100%;border-radius:3px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Pick one mode (weekly or monthly)</h3>
+      <p>You choose upfront: "I budget weekly" or "I budget monthly." The app operates in that mode. Simpler setup — you only manage one type of limit at a time.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;font-size:12px;">Data analyst take: A gives the most control and the most useful alerts, but requires setting 2× the limits. B is the smartest UX — one limit, automatic weekly projection. C is simplest but least flexible.</p>

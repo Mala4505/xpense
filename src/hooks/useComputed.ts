@@ -7,6 +7,7 @@ import {
 } from 'date-fns';
 import { useLiveQuery } from './useLiveQuery';
 import { getStartOfMonth, getEndOfMonth } from '../utils/date';
+import { useDataRefreshStore } from '../stores/dataRefreshStore';
 
 // ─── Live (Home screen) ────────────────────────────────────────────────────
 
@@ -85,6 +86,7 @@ export interface KhumusBreakdownItem {
 
 export function useKhumusBreakdown(): KhumusBreakdownItem[] {
   const db = useSQLiteContext();
+  const key = useDataRefreshStore(s => s.key);
   const [data, setData] = useState<KhumusBreakdownItem[]>([]);
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -105,7 +107,7 @@ export function useKhumusBreakdown(): KhumusBreakdownItem[] {
       })));
     });
     return () => { active = false; };
-  }, [db]));
+  }, [db, key]));
   return data;
 }
 
@@ -115,37 +117,28 @@ export interface MonthComparison {
 }
 
 export function useMonthComparison(): MonthComparison {
-  const db = useSQLiteContext();
-  const [data, setData] = useState<MonthComparison>({ incomePct: 0, expensePct: 0 });
-  useFocusEffect(useCallback(() => {
-    let active = true;
-    const now = new Date();
-    const thisStart = startOfDay(startOfMonth(now)).getTime();
-    const thisEnd = endOfDay(now).getTime();
-    const lastMonthDate = subMonths(now, 1);
-    const lastStart = startOfDay(startOfMonth(lastMonthDate)).getTime();
-    const lastEnd = endOfDay(endOfMonth(lastMonthDate)).getTime();
-    db.getAllAsync<{ flow: string; total: number; period: string }>(
-      `SELECT flow, SUM(amount) AS total,
-         CASE WHEN created_at >= ? AND created_at <= ? THEN 'this' ELSE 'last' END AS period
-       FROM transactions
-       WHERE (created_at >= ? AND created_at <= ?) OR (created_at >= ? AND created_at <= ?)
-       GROUP BY flow, period`,
-      [thisStart, thisEnd, thisStart, thisEnd, lastStart, lastEnd]
-    ).then(rows => {
-      if (!active) return;
-      const get = (flow: string, period: string) =>
-        rows.find(r => r.flow === flow && r.period === period)?.total ?? 0;
-      const thisIncome = get('IN', 'this'); const lastIncome = get('IN', 'last');
-      const thisExpense = get('OUT', 'this'); const lastExpense = get('OUT', 'last');
-      setData({
-        incomePct: lastIncome > 0 ? Math.round(((thisIncome - lastIncome) / lastIncome) * 100) : 0,
-        expensePct: lastExpense > 0 ? Math.round(((thisExpense - lastExpense) / lastExpense) * 100) : 0,
-      });
-    });
-    return () => { active = false; };
-  }, [db]));
-  return data;
+  const now = new Date();
+  const thisStart = startOfDay(startOfMonth(now)).getTime();
+  const thisEnd   = endOfDay(now).getTime();
+  const lastStart = startOfDay(startOfMonth(subMonths(now, 1))).getTime();
+  const lastEnd   = endOfDay(endOfMonth(subMonths(now, 1))).getTime();
+
+  const rows = useLiveQuery<{ flow: string; total: number; period: string }>(
+    `SELECT flow, SUM(amount) AS total,
+       CASE WHEN created_at >= ? AND created_at <= ? THEN 'this' ELSE 'last' END AS period
+     FROM transactions
+     WHERE (created_at >= ? AND created_at <= ?) OR (created_at >= ? AND created_at <= ?)
+     GROUP BY flow, period`,
+    [thisStart, thisEnd, thisStart, thisEnd, lastStart, lastEnd]
+  );
+
+  const get = (f: string, p: string) =>
+    rows.find(r => r.flow === f && r.period === p)?.total ?? 0;
+  const [ti, li, te, le] = [get('IN', 'this'), get('IN', 'last'), get('OUT', 'this'), get('OUT', 'last')];
+  return {
+    incomePct:  li > 0 ? Math.round(((ti - li) / li) * 100) : 0,
+    expensePct: le > 0 ? Math.round(((te - le) / le) * 100) : 0,
+  };
 }
 
 export interface PeriodTotals {
@@ -156,6 +149,7 @@ export interface PeriodTotals {
 
 export function usePeriodTotals(start: number, end: number): PeriodTotals {
   const db = useSQLiteContext();
+  const key = useDataRefreshStore(s => s.key);
   const [data, setData] = useState<PeriodTotals>({ income: 0, expense: 0, net: 0 });
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -170,7 +164,7 @@ export function usePeriodTotals(start: number, end: number): PeriodTotals {
       setData({ income, expense, net: income - expense });
     });
     return () => { active = false; };
-  }, [db, start, end]));
+  }, [db, start, end, key]));
   return data;
 }
 
@@ -236,6 +230,7 @@ function buildBuckets(range: TimeRange): Bucket[] {
 
 export function useTimeSeriesData(range: TimeRange): TimeSeriesPoint[] {
   const db = useSQLiteContext();
+  const key = useDataRefreshStore(s => s.key);
   const [allTxs, setAllTxs] = useState<{ created_at: number; flow: string; amount: number }[]>([]);
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -247,7 +242,7 @@ export function useTimeSeriesData(range: TimeRange): TimeSeriesPoint[] {
       [rangeStart, rangeEnd]
     ).then(rows => { if (active) setAllTxs(rows); });
     return () => { active = false; };
-  }, [db, range]));
+  }, [db, range, key]));
   return useMemo(() => {
     const buckets = buildBuckets(range);
     return buckets.map(b => {
@@ -269,6 +264,7 @@ export interface CategoryBreakdownItem {
 
 export function useCategoryBreakdown(start: number, end: number): CategoryBreakdownItem[] {
   const db = useSQLiteContext();
+  const key = useDataRefreshStore(s => s.key);
   const [data, setData] = useState<CategoryBreakdownItem[]>([]);
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -292,6 +288,6 @@ export function useCategoryBreakdown(start: number, end: number): CategoryBreakd
       })));
     });
     return () => { active = false; };
-  }, [db, start, end]));
+  }, [db, start, end, key]));
   return data;
 }

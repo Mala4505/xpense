@@ -1,0 +1,151 @@
+<h2>Design — Section 3: Notifications & Settings</h2>
+<p class="subtitle">How alerts fire and where you configure them.</p>
+
+<div class="split">
+
+  <!-- LEFT: Notification types -->
+  <div class="mockup">
+    <div class="mockup-header">How alerts work</div>
+    <div class="mockup-body" style="background:#0f172a;padding:14px;border-radius:8px;">
+
+      <div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Trigger: every time you add a transaction</div>
+
+      <!-- Alert flow -->
+      <div style="display:flex;flex-direction:column;gap:8px;">
+
+        <div style="background:#f59e0b18;border:1px solid #f59e0b40;border-radius:8px;padding:10px;">
+          <div style="font-size:9px;color:#f59e0b;font-weight:700;margin-bottom:4px;">⚠ EARLY WARNING (configurable, default 75%)</div>
+          <div style="font-size:10px;color:#94a3b8;margin-bottom:6px;">Fires once per budget per month when threshold is crossed</div>
+          <div style="background:#0f172a;border-radius:6px;padding:8px;">
+            <div style="font-size:9px;color:#f59e0b;font-weight:600;">Budget Warning</div>
+            <div style="font-size:9px;color:#94a3b8;margin-top:2px;">Food & Dining is 78% used — ₹880 left this month</div>
+          </div>
+        </div>
+
+        <div style="background:#ef444418;border:1px solid #ef444440;border-radius:8px;padding:10px;">
+          <div style="font-size:9px;color:#ef4444;font-weight:700;margin-bottom:4px;">🚨 FINAL WARNING (configurable, default 90%)</div>
+          <div style="font-size:10px;color:#94a3b8;margin-bottom:6px;">Fires once per budget per month when threshold is crossed</div>
+          <div style="background:#0f172a;border-radius:6px;padding:8px;">
+            <div style="font-size:9px;color:#ef4444;font-weight:600;">Almost at Limit</div>
+            <div style="font-size:9px;color:#94a3b8;margin-top:2px;">Food & Dining is 91% used — only ₹360 remaining</div>
+          </div>
+        </div>
+
+        <div style="background:#ef444430;border:1px solid #ef4444;border-radius:8px;padding:10px;">
+          <div style="font-size:9px;color:#ef4444;font-weight:700;margin-bottom:4px;">🔴 LIMIT EXCEEDED (always at 100%)</div>
+          <div style="font-size:10px;color:#94a3b8;margin-bottom:6px;">Fires every time you exceed — includes how much over</div>
+          <div style="background:#0f172a;border-radius:6px;padding:8px;">
+            <div style="font-size:9px;color:#ef4444;font-weight:600;">Budget Exceeded</div>
+            <div style="font-size:9px;color:#94a3b8;margin-top:2px;">Food & Dining is over by ₹240 — ₹4,240 of ₹4,000 used</div>
+          </div>
+        </div>
+
+        <div style="background:#6366f118;border:1px solid #6366f140;border-radius:8px;padding:10px;">
+          <div style="font-size:9px;color:#6366f1;font-weight:700;margin-bottom:4px;">📅 WEEKLY DIGEST (every Monday 9am)</div>
+          <div style="font-size:10px;color:#94a3b8;margin-bottom:6px;">Uses existing expo-notifications scheduler — same pattern as monthly summary</div>
+          <div style="background:#0f172a;border-radius:6px;padding:8px;">
+            <div style="font-size:9px;color:#6366f1;font-weight:600;">Week 2 Recap</div>
+            <div style="font-size:9px;color:#94a3b8;margin-top:2px;">Spent ₹2,800 last week · on track for May · Food is your top spend</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="margin-top:10px;font-size:9px;color:#475569;background:#1e293b;border-radius:6px;padding:8px;">
+        All alerts also appear in the in-app notification bell (notificationsStore) — same as existing transaction notifications.
+      </div>
+
+    </div>
+  </div>
+
+  <!-- RIGHT: Settings screen -->
+  <div class="mockup">
+    <div class="mockup-header">Settings screen — Budget Alerts section</div>
+    <div class="mockup-body" style="background:#0f172a;padding:0;border-radius:8px;overflow:hidden;">
+
+      <!-- Settings header -->
+      <div style="padding:10px 14px;border-bottom:1px solid #1e293b;">
+        <div style="font-size:12px;color:#fff;font-weight:600;">Settings</div>
+      </div>
+
+      <!-- Existing sections (faded) -->
+      <div style="padding:8px 14px;opacity:0.3;">
+        <div style="font-size:8px;color:#64748b;margin-bottom:4px;">GENERAL</div>
+        <div style="background:#1e293b;border-radius:6px;height:24px;margin-bottom:4px;"></div>
+        <div style="background:#1e293b;border-radius:6px;height:24px;"></div>
+      </div>
+
+      <!-- NEW: Budget Alerts section -->
+      <div style="padding:8px 14px;">
+        <div style="font-size:8px;color:#facc15;letter-spacing:1px;margin-bottom:8px;">BUDGET ALERTS</div>
+
+        <!-- Threshold 1 -->
+        <div style="background:#1e293b;border-radius:8px;padding:10px;margin-bottom:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="font-size:10px;color:#fff;">Early warning</div>
+            <div style="background:#22c55e;border-radius:10px;width:28px;height:16px;display:flex;align-items:center;justify-content:flex-end;padding-right:2px;">
+              <div style="background:#fff;border-radius:50%;width:12px;height:12px;"></div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="font-size:9px;color:#64748b;">Alert at</div>
+            <div style="background:#0f172a;border:1px solid #334155;border-radius:4px;padding:3px 10px;font-size:10px;color:#facc15;font-weight:600;">75%</div>
+            <div style="font-size:9px;color:#64748b;">of budget used</div>
+          </div>
+        </div>
+
+        <!-- Threshold 2 -->
+        <div style="background:#1e293b;border-radius:8px;padding:10px;margin-bottom:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="font-size:10px;color:#fff;">Final warning</div>
+            <div style="background:#22c55e;border-radius:10px;width:28px;height:16px;display:flex;align-items:center;justify-content:flex-end;padding-right:2px;">
+              <div style="background:#fff;border-radius:50%;width:12px;height:12px;"></div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="font-size:9px;color:#64748b;">Alert at</div>
+            <div style="background:#0f172a;border:1px solid #334155;border-radius:4px;padding:3px 10px;font-size:10px;color:#facc15;font-weight:600;">90%</div>
+            <div style="font-size:9px;color:#64748b;">of budget used</div>
+          </div>
+        </div>
+
+        <!-- Threshold 3 - always on -->
+        <div style="background:#1e293b;border-radius:8px;padding:10px;margin-bottom:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-size:10px;color:#fff;">Limit exceeded</div>
+              <div style="font-size:8px;color:#475569;margin-top:2px;">Always enabled</div>
+            </div>
+            <div style="background:#334155;border-radius:10px;width:28px;height:16px;display:flex;align-items:center;justify-content:flex-end;padding-right:2px;opacity:0.5;">
+              <div style="background:#fff;border-radius:50%;width:12px;height:12px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weekly digest -->
+        <div style="background:#1e293b;border-radius:8px;padding:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-size:10px;color:#fff;">Weekly digest</div>
+              <div style="font-size:8px;color:#475569;margin-top:2px;">Every Monday at 9am</div>
+            </div>
+            <div style="background:#22c55e;border-radius:10px;width:28px;height:16px;display:flex;align-items:center;justify-content:flex-end;padding-right:2px;">
+              <div style="background:#fff;border-radius:50%;width:12px;height:12px;"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Existing sections (faded) -->
+      <div style="padding:8px 14px;opacity:0.3;">
+        <div style="font-size:8px;color:#64748b;margin-bottom:4px;">NOTIFICATIONS</div>
+        <div style="background:#1e293b;border-radius:6px;height:24px;"></div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:20px;font-size:13px;color:#facc15;">Does the notification system and Settings layout look right?</p>

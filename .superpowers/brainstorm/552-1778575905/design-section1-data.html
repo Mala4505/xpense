@@ -1,0 +1,77 @@
+<h2>Design — Section 1: Data Model & Architecture</h2>
+<p class="subtitle">How budgets are stored and computed. Does this look right?</p>
+
+<div class="section">
+  <h3>New SQLite table: <code style="background:#1e293b;padding:2px 6px;border-radius:3px;font-size:12px;">budgets</code></h3>
+  <div style="background:#0f172a;border-radius:8px;padding:16px;font-family:monospace;font-size:12px;color:#94a3b8;line-height:1.7;margin-top:8px;">
+    <span style="color:#facc15;">id</span>            TEXT PRIMARY KEY<br>
+    <span style="color:#facc15;">category_id</span>   TEXT  <span style="color:#475569;">-- NULL = overall budget</span><br>
+    <span style="color:#facc15;">amount_limit</span>  REAL  <span style="color:#475569;">-- e.g. 20000.00</span><br>
+    <span style="color:#facc15;">currency</span>      TEXT  <span style="color:#475569;">-- e.g. "INR"</span><br>
+    <span style="color:#facc15;">period</span>        TEXT  <span style="color:#475569;">-- "monthly" (only mode)</span><br>
+    <span style="color:#facc15;">created_at</span>    INTEGER<br>
+    <span style="color:#facc15;">updated_at</span>    INTEGER
+  </div>
+  <p style="font-size:12px;color:#64748b;margin-top:8px;">One row per budget. <code style="background:#1e293b;padding:1px 4px;border-radius:2px;">category_id = NULL</code> = the overall monthly cap. Each category gets its own row. Budget history is preserved — old rows are never deleted, new ones are inserted each month.</p>
+</div>
+
+<div class="section">
+  <h3>Computed query (spent vs limit)</h3>
+  <div style="background:#0f172a;border-radius:8px;padding:14px;font-family:monospace;font-size:11px;color:#94a3b8;line-height:1.6;margin-top:8px;">
+    <span style="color:#6366f1;">SELECT</span> b.id, b.category_id, b.amount_limit,<br>
+    &nbsp;&nbsp;<span style="color:#6366f1;">COALESCE</span>(<span style="color:#6366f1;">SUM</span>(t.amount), 0) <span style="color:#6366f1;">AS</span> <span style="color:#facc15;">amount_spent</span><br>
+    <span style="color:#6366f1;">FROM</span> budgets b<br>
+    <span style="color:#6366f1;">LEFT JOIN</span> transactions t<br>
+    &nbsp;&nbsp;<span style="color:#6366f1;">ON</span> (b.category_id <span style="color:#6366f1;">IS NULL OR</span> t.category_id = b.category_id)<br>
+    &nbsp;&nbsp;<span style="color:#6366f1;">AND</span> t.flow = <span style="color:#22c55e;">'OUT'</span><br>
+    &nbsp;&nbsp;<span style="color:#6366f1;">AND</span> t.created_at <span style="color:#6366f1;">BETWEEN</span> <span style="color:#22c55e;">startOfMonth</span> <span style="color:#6366f1;">AND</span> <span style="color:#22c55e;">now</span><br>
+    <span style="color:#6366f1;">GROUP BY</span> b.id
+  </div>
+  <p style="font-size:12px;color:#64748b;margin-top:8px;">Runs live against the existing <code style="background:#1e293b;padding:1px 4px;border-radius:2px;">transactions</code> table. No duplication. Uses same <code style="background:#1e293b;padding:1px 4px;border-radius:2px;">date-fns</code> already in the project for month boundaries.</p>
+</div>
+
+<div class="section">
+  <h3>New <code style="background:#1e293b;padding:2px 6px;border-radius:3px;font-size:12px;">budgetStore.ts</code> (Zustand)</h3>
+  <div style="background:#0f172a;border-radius:8px;padding:14px;margin-top:8px;">
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <div style="background:#facc1520;border:1px solid #facc15;border-radius:4px;padding:3px 8px;font-size:10px;color:#facc15;white-space:nowrap;">state</div>
+        <div style="font-size:11px;color:#94a3b8;"><code style="background:#1e293b;padding:1px 4px;border-radius:2px;font-size:10px;">budgets[]</code> — array of budget rows with computed spent/percent</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <div style="background:#6366f120;border:1px solid #6366f1;border-radius:4px;padding:3px 8px;font-size:10px;color:#6366f1;white-space:nowrap;">action</div>
+        <div style="font-size:11px;color:#94a3b8;"><code style="background:#1e293b;padding:1px 4px;border-radius:2px;font-size:10px;">setBudget(categoryId, limit)</code> — upsert a budget row</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <div style="background:#6366f120;border:1px solid #6366f1;border-radius:4px;padding:3px 8px;font-size:10px;color:#6366f1;white-space:nowrap;">action</div>
+        <div style="font-size:11px;color:#94a3b8;"><code style="background:#1e293b;padding:1px 4px;border-radius:2px;font-size:10px;">deleteBudget(id)</code> — remove a limit</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <div style="background:#22c55e20;border:1px solid #22c55e;border-radius:4px;padding:3px 8px;font-size:10px;color:#22c55e;white-space:nowrap;">computed</div>
+        <div style="font-size:11px;color:#94a3b8;"><code style="background:#1e293b;padding:1px 4px;border-radius:2px;font-size:10px;">checkAlerts()</code> — called after every transaction add, fires notifications if thresholds crossed</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <div style="background:#22c55e20;border:1px solid #22c55e;border-radius:4px;padding:3px 8px;font-size:10px;color:#22c55e;white-space:nowrap;">computed</div>
+        <div style="font-size:11px;color:#94a3b8;"><code style="background:#1e293b;padding:1px 4px;border-radius:2px;font-size:10px;">weeklyPace</code> — avg daily spend × 7, projects month-end total</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Settings additions</h3>
+  <div style="background:#0f172a;border-radius:8px;padding:14px;margin-top:8px;">
+    <div style="font-size:11px;color:#94a3b8;line-height:1.8;">
+      New fields added to existing <code style="background:#1e293b;padding:1px 4px;border-radius:2px;font-size:10px;">settingsStore.ts</code>:<br><br>
+      <span style="color:#facc15;">budgetAlerts</span>: <span style="color:#6366f1;">&#123;</span><br>
+      &nbsp;&nbsp;threshold75: <span style="color:#22c55e;">boolean</span> + <span style="color:#22c55e;">number</span> (default 75)<br>
+      &nbsp;&nbsp;threshold90: <span style="color:#22c55e;">boolean</span> + <span style="color:#22c55e;">number</span> (default 90)<br>
+      &nbsp;&nbsp;threshold100: <span style="color:#22c55e;">boolean</span> (always recommended on)<br>
+      &nbsp;&nbsp;weeklyDigest: <span style="color:#22c55e;">boolean</span><br>
+      <span style="color:#6366f1;">&#125;</span>
+    </div>
+  </div>
+  <p style="font-size:12px;color:#64748b;margin-top:8px;">Thresholds are numbers the user can edit (e.g. change 75 → 80). Each has a toggle. Persisted in existing AsyncStorage-backed settingsStore — no new store needed.</p>
+</div>
+
+<p class="subtitle" style="margin-top:20px;font-size:13px;color:#facc15;">Does this data model and architecture look right to you?</p>

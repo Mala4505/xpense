@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useFocusEffect } from '@react-navigation/native';
 import { useLiveQuery } from './useLiveQuery';
+import { useDataRefreshStore } from '../stores/dataRefreshStore';
 import { RawCategory, EnrichedLoan } from '../db/types';
 
 export type { RawCategory } from '../db/types';
@@ -13,6 +14,7 @@ export function useCategoriesMap(): Map<string, RawCategory> {
 
 export function useCategories(): RawCategory[] {
   const db = useSQLiteContext();
+  const key = useDataRefreshStore(s => s.key);
   const [data, setData] = useState<RawCategory[]>([]);
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -20,12 +22,13 @@ export function useCategories(): RawCategory[] {
       `SELECT * FROM categories ORDER BY sort_order ASC`
     ).then(rows => { if (active) setData(rows); });
     return () => { active = false; };
-  }, [db]));
+  }, [db, key]));
   return data;
 }
 
 export function useLoans(): EnrichedLoan[] {
   const db = useSQLiteContext();
+  const key = useDataRefreshStore(s => s.key);
   const [data, setData] = useState<EnrichedLoan[]>([]);
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -39,6 +42,6 @@ export function useLoans(): EnrichedLoan[] {
        ORDER BY l.created_at DESC`
     ).then(rows => { if (active) setData(rows); });
     return () => { active = false; };
-  }, [db]));
+  }, [db, key]));
   return data;
 }

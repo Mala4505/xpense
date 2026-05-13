@@ -1,0 +1,52 @@
+<h2>When should the app alert you about budgets?</h2>
+<p class="subtitle">Pick which trigger points you want notifications for. You can select multiple.</p>
+
+<div class="options" data-multiselect>
+
+  <div class="option" data-choice="75pct" onclick="toggleSelect(this)">
+    <div class="letter">75%</div>
+    <div class="content">
+      <h3>Early warning — 75% used</h3>
+      <p>
+        <span style="display:inline-block;background:#f59e0b22;border:1px solid #f59e0b;border-radius:4px;padding:2px 8px;font-size:11px;color:#f59e0b;">⚠ Food budget 75% used — ₹1,000 left</span>
+      </p>
+      <p>Gives you time to adjust before you overspend. Best for categories like Food or Shopping where habits are easy to change mid-month.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="90pct" onclick="toggleSelect(this)">
+    <div class="letter">90%</div>
+    <div class="content">
+      <h3>Final warning — 90% used</h3>
+      <p>
+        <span style="display:inline-block;background:#ef444422;border:1px solid #ef4444;border-radius:4px;padding:2px 8px;font-size:11px;color:#ef4444;">🚨 Almost at limit — ₹400 left in Food</span>
+      </p>
+      <p>Last chance alert. Urgent enough to act on, still a little breathing room left. High signal-to-noise ratio.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="100pct" onclick="toggleSelect(this)">
+    <div class="letter">100%</div>
+    <div class="content">
+      <h3>Limit reached — 100% used</h3>
+      <p>
+        <span style="display:inline-block;background:#ef444433;border:1px solid #ef4444;border-radius:4px;padding:2px 8px;font-size:11px;color:#ef4444;">🔴 Food budget exceeded! ₹320 over limit</span>
+      </p>
+      <p>Fires when you've hit or crossed the limit. Essential — this one should always be on.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="weekly-summary" onclick="toggleSelect(this)">
+    <div class="letter">📅</div>
+    <div class="content">
+      <h3>Weekly digest — every Monday</h3>
+      <p>
+        <span style="display:inline-block;background:#6366f122;border:1px solid #6366f1;border-radius:4px;padding:2px 8px;font-size:11px;color:#6366f1;">📊 Week 2 recap: ₹2,800 spent · on track for May</span>
+      </p>
+      <p>A quiet weekly summary every Monday — how last week went, projected month-end total. Useful for planning the week ahead.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:20px;font-size:12px;">Data analyst recommendation: 75% + 100% is the sweet spot. The 75% alert gives you time to correct, the 100% alert is the hard stop. The weekly digest is great if you like to review regularly. Select as many as you want.</p>

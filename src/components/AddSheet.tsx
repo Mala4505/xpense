@@ -12,10 +12,10 @@ import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
-import { BlurView } from 'expo-blur';
+// import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { addDays, subDays } from 'date-fns';
-// import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { formatTransactionDate } from '../utils/date';
 import * as Haptics from 'expo-haptics';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -25,10 +25,12 @@ import { useToastStore } from '../stores/toastStore';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/fonts';
 import { formatAmount } from '../utils/currency';
+import { useNotificationsStore } from '../stores/notificationsStore';
 import { createTransaction, updateTransaction } from '../queries/transactions';
 import { createLoan } from '../queries/loans';
 import { RawCategory, RawTransaction } from '../db/types';
 import { Flow, TransactionStatus } from '../types';
+import { useDataRefreshStore } from '../stores/dataRefreshStore';
 
 
 const STATUS_OPTIONS: { key: TransactionStatus; label: string }[] = [
@@ -50,13 +52,6 @@ export function AddSheet() {
   const db = useSQLiteContext();
   const { editTransactionId, closeSheet, isOpen } = useAddSheetStore();
 
-  useEffect(() => {
-    if (isOpen) {
-      sheetRef.current?.expand();
-    } else {
-      sheetRef.current?.close();
-    }
-  }, [isOpen]);
   const currency = useSettingsStore((s) => s.defaultCurrency);
   const showToast = useToastStore((s) => s.showToast);
 
@@ -86,16 +81,19 @@ export function AddSheet() {
   const numericAmount = parseFloat(amount) || 0;
   const canSave = numericAmount > 0 && !!selectedCategoryId;
 
-  const dateLabel = useMemo(
-    () => formatTransactionDate(selectedDate.getTime()),
-    [selectedDate]
-  );
+  const dateLabel = useMemo(() => {
+    if (!selectedDate || isNaN(selectedDate.getTime())) {
+      return 'Select date';
+    }
+    return formatTransactionDate(selectedDate.getTime());
+  }, [selectedDate]);
+
   const isToday = useMemo(() => {
     const t = new Date();
     return (
       selectedDate.getFullYear() === t.getFullYear() &&
-      selectedDate.getMonth()    === t.getMonth()    &&
-      selectedDate.getDate()     === t.getDate()
+      selectedDate.getMonth() === t.getMonth() &&
+      selectedDate.getDate() === t.getDate()
     );
   }, [selectedDate]);
 
@@ -120,12 +118,18 @@ export function AddSheet() {
       ]).then((tx) => {
         if (!tx) return;
         setFlow(tx.flow);
-        setAmount(tx.amount.toString());
-        setSelectedCategoryId(tx.category_id);
+        setAmount(
+          typeof tx.amount === 'number'
+            ? tx.amount.toString()
+            : ''
+        ); setSelectedCategoryId(tx.category_id);
         setNote(tx.note ?? '');
         setStatus(tx.status);
-        setSelectedDate(new Date(tx.created_at));
-        if (tx.loan_id) {
+        setSelectedDate(
+          tx.created_at && !isNaN(new Date(tx.created_at).getTime())
+            ? new Date(tx.created_at)
+            : new Date()
+        ); if (tx.loan_id) {
           db.getFirstAsync<{ person_name: string }>(
             'SELECT person_name FROM loans WHERE id = ?',
             [tx.loan_id]
@@ -151,16 +155,23 @@ export function AddSheet() {
     setSelectedCategoryId(null);
   }
 
-  // function openDatePicker() {
-  //   DateTimePickerAndroid.open({
-  //     value: selectedDate,
-  //     mode: 'date',
-  //     maximumDate: new Date(),
-  //     onChange: (event, date) => {
-  //       if (event.type === 'set' && date) setSelectedDate(date);
-  //     },
-  //   });
-  // }
+  function openDatePicker() {
+    const safeDate =
+      selectedDate && !isNaN(selectedDate.getTime())
+        ? selectedDate
+        : new Date();
+
+    DateTimePickerAndroid.open({
+      value: safeDate,
+      mode: 'date',
+      maximumDate: new Date(),
+      onChange: (event, date) => {
+        if (event.type === 'set' && date) {
+          setSelectedDate(date);
+        }
+      },
+    });
+  }
 
   function buildTimestamp(date: Date): number {
     const now = new Date();
@@ -187,6 +198,11 @@ export function AddSheet() {
           created_at: buildTimestamp(selectedDate),
         });
         showToast('Transaction updated', amountLabel);
+        useNotificationsStore.getState().addNotification({
+          type: 'transaction',
+          title: selectedCategory?.name ?? 'Transaction',
+          body: amountLabel,
+        });
       } else {
         let loan_id: string | undefined;
         if (isLoanCategory && personName.trim()) {
@@ -210,8 +226,14 @@ export function AddSheet() {
           created_at: buildTimestamp(selectedDate),
         });
         showToast('Transaction added', amountLabel);
+        useNotificationsStore.getState().addNotification({
+          type: 'transaction',
+          title: selectedCategory?.name ?? 'Transaction',
+          body: amountLabel,
+        });
       }
-      closeSheet();
+      useDataRefreshStore.getState().refresh();
+      sheetRef.current?.close();
     } catch {
       Alert.alert('Error', 'Could not save transaction. Please try again.');
     } finally {
@@ -225,7 +247,7 @@ export function AddSheet() {
       appearsOnIndex={0}
       disappearsOnIndex={-1}
       pressBehavior="close"
-      enableTouchThrough={false} // 👈 IMPORTANT
+      enableTouchThrough={true}
     />
   );
 
@@ -233,7 +255,7 @@ export function AddSheet() {
   return (
     <BottomSheet
       ref={sheetRef}
-      index={-1}
+      index={0}
       snapPoints={["58%"]}
       enablePanDownToClose
       onClose={closeSheet}
@@ -254,7 +276,7 @@ export function AddSheet() {
           <Text style={styles.title}>
             {editTransactionId ? 'Edit Transaction' : 'Add Transaction'}
           </Text>
-          <TouchableOpacity onPress={closeSheet} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity onPress={() => sheetRef.current?.close()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <Ionicons name="close" size={20} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
@@ -376,28 +398,17 @@ export function AddSheet() {
 
         {/* ── Date ── */}
         <Text style={styles.sectionLabel}>Date</Text>
-        <View style={styles.dateRow}>
-          <TouchableOpacity
-            onPress={() => setSelectedDate(d => subDays(d, 1))}
-            style={styles.dateArrow}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.dateArrowText}>‹</Text>
-          </TouchableOpacity>
-          {/* <TouchableOpacity onPress={openDatePicker} style={styles.dateLabelBtn} activeOpacity={0.7}>
-            <Text style={styles.dateLabelText}>{dateLabel}</Text>
-          </TouchableOpacity> */}
-          <TouchableOpacity
-            onPress={() => { if (!isToday) setSelectedDate(d => addDays(d, 1)); }}
-            style={[styles.dateArrow, isToday && styles.dateArrowDisabled]}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            activeOpacity={isToday ? 1 : 0.7}
-            disabled={isToday}
-          >
-            <Text style={[styles.dateArrowText, isToday && styles.dateArrowTextDisabled]}>›</Text>
-          </TouchableOpacity>
-        </View>
+
+        <TouchableOpacity
+          onPress={openDatePicker}
+          style={styles.datePickerBtn}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="calendar-outline" size={16} color={colors.textMuted} />
+          <Text style={styles.datePickerText}>
+            {dateLabel}
+          </Text>
+        </TouchableOpacity>
 
         {/* ── Status ── */}
         <Text style={styles.sectionLabel}>Status</Text>
@@ -664,5 +675,20 @@ const styles = StyleSheet.create({
   },
   dateArrowTextDisabled: {
     color: colors.textDisabled,
+  },
+  datePickerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+
+  datePickerText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 13,
+    color: colors.textPrimary,
   },
 });

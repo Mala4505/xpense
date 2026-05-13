@@ -1,0 +1,206 @@
+<h2>Design — Section 2: Budget Screen UI</h2>
+<p class="subtitle">Budget tab inside Reports screen. Two sub-views: Monthly overview + Weekly pace. Scroll down for the full layout.</p>
+
+<div class="split">
+
+  <!-- LEFT: Monthly View -->
+  <div class="mockup">
+    <div class="mockup-header">Monthly View (default)</div>
+    <div class="mockup-body" style="background:#0f172a;padding:0;border-radius:8px;overflow:hidden;">
+
+      <!-- Tab bar inside Reports -->
+      <div style="display:flex;background:#0f172a;border-bottom:1px solid #1e293b;padding:0 12px;">
+        <div style="padding:10px 14px;font-size:10px;color:#facc15;font-weight:700;border-bottom:2px solid #facc15;">Budget</div>
+        <div style="padding:10px 14px;font-size:10px;color:#475569;">Analytics</div>
+        <div style="padding:10px 14px;font-size:10px;color:#475569;">Trends</div>
+      </div>
+
+      <!-- Period switcher -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px 4px;">
+        <div style="font-size:9px;color:#64748b;">◀ April</div>
+        <div style="font-size:11px;color:#fff;font-weight:600;">May 2026</div>
+        <div style="font-size:9px;color:#334155;">June ▶</div>
+      </div>
+
+      <!-- Overall budget card -->
+      <div style="margin:8px 14px;background:#1e293b;border-radius:10px;padding:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+          <div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;">Total Budget</div>
+          <div style="font-size:8px;color:#facc15;background:#facc1518;padding:2px 6px;border-radius:4px;">62% used</div>
+        </div>
+        <div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:2px;">₹12,400 <span style="font-size:10px;color:#64748b;font-weight:400;">of ₹20,000</span></div>
+        <div style="background:#0f172a;border-radius:6px;height:8px;overflow:hidden;margin:8px 0;">
+          <div style="width:62%;background:linear-gradient(90deg,#facc15,#f59e0b);height:100%;border-radius:6px;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:#64748b;">
+          <span>₹7,600 remaining</span>
+          <span>19 days left</span>
+        </div>
+      </div>
+
+      <!-- Weekly pace strip -->
+      <div style="margin:0 14px 8px;background:#6366f118;border:1px solid #6366f140;border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:8px;color:#6366f1;font-weight:600;">WEEKLY PACE</div>
+          <div style="font-size:10px;color:#94a3b8;margin-top:1px;">₹3,100/wk avg · on track ✓</div>
+        </div>
+        <div style="font-size:8px;color:#6366f1;">View →</div>
+      </div>
+
+      <!-- Category budgets -->
+      <div style="padding:0 14px 6px;">
+        <div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">By Category</div>
+
+        <!-- Food - warning -->
+        <div style="background:#1e293b;border-radius:8px;padding:10px;margin-bottom:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+            <div style="font-size:10px;color:#fff;font-weight:500;">🍔 Food & Dining</div>
+            <div style="font-size:8px;color:#ef4444;background:#ef444418;padding:2px 6px;border-radius:4px;">85% ⚠</div>
+          </div>
+          <div style="background:#0f172a;border-radius:4px;height:5px;overflow:hidden;margin-bottom:4px;">
+            <div style="width:85%;background:#ef4444;height:100%;border-radius:4px;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:8px;color:#64748b;">
+            <span>₹3,400 spent</span><span>₹600 left of ₹4,000</span>
+          </div>
+        </div>
+
+        <!-- Transport - good -->
+        <div style="background:#1e293b;border-radius:8px;padding:10px;margin-bottom:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+            <div style="font-size:10px;color:#fff;font-weight:500;">🚗 Transport</div>
+            <div style="font-size:8px;color:#22c55e;background:#22c55e18;padding:2px 6px;border-radius:4px;">40%</div>
+          </div>
+          <div style="background:#0f172a;border-radius:4px;height:5px;overflow:hidden;margin-bottom:4px;">
+            <div style="width:40%;background:#22c55e;height:100%;border-radius:4px;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:8px;color:#64748b;">
+            <span>₹800 spent</span><span>₹1,200 left of ₹2,000</span>
+          </div>
+        </div>
+
+        <!-- Shopping - moderate -->
+        <div style="background:#1e293b;border-radius:8px;padding:10px;margin-bottom:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+            <div style="font-size:10px;color:#fff;font-weight:500;">🛍 Shopping</div>
+            <div style="font-size:8px;color:#facc15;background:#facc1518;padding:2px 6px;border-radius:4px;">58%</div>
+          </div>
+          <div style="background:#0f172a;border-radius:4px;height:5px;overflow:hidden;margin-bottom:4px;">
+            <div style="width:58%;background:#facc15;height:100%;border-radius:4px;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:8px;color:#64748b;">
+            <span>₹1,740 spent</span><span>₹1,260 left of ₹3,000</span>
+          </div>
+        </div>
+
+        <!-- Add category budget -->
+        <div style="border:1px dashed #334155;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:9px;color:#475569;">+ Set limit for another category</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- RIGHT: Weekly Pace View -->
+  <div class="mockup">
+    <div class="mockup-header">Weekly Pace View (tap "View →")</div>
+    <div class="mockup-body" style="background:#0f172a;padding:0;border-radius:8px;overflow:hidden;">
+
+      <!-- Header -->
+      <div style="padding:12px 14px 8px;border-bottom:1px solid #1e293b;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+          <div style="font-size:9px;color:#6366f1;">← Monthly</div>
+          <div style="flex:1;text-align:center;font-size:11px;color:#fff;font-weight:600;">Weekly Pace</div>
+        </div>
+        <div style="font-size:8px;color:#64748b;text-align:center;">May 2026 · based on ₹20,000 monthly budget</div>
+      </div>
+
+      <!-- Week bars -->
+      <div style="padding:12px 14px;">
+        <div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Weeks this month</div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <!-- Week 1 - done -->
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:9px;color:#94a3b8;margin-bottom:3px;">
+              <span>Week 1 · May 1–7</span><span style="color:#22c55e;">₹2,900 ✓</span>
+            </div>
+            <div style="background:#1e293b;border-radius:4px;height:6px;overflow:hidden;">
+              <div style="width:58%;background:#22c55e;height:100%;border-radius:4px;"></div>
+            </div>
+          </div>
+
+          <!-- Week 2 - in progress -->
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:9px;color:#94a3b8;margin-bottom:3px;">
+              <span>Week 2 · May 8–12 <span style="color:#facc15;">(now)</span></span><span>₹2,800</span>
+            </div>
+            <div style="background:#1e293b;border-radius:4px;height:6px;overflow:hidden;">
+              <div style="width:56%;background:#facc15;height:100%;border-radius:4px;"></div>
+            </div>
+          </div>
+
+          <!-- Week 3 - projected -->
+          <div style="opacity:0.5;">
+            <div style="display:flex;justify-content:space-between;font-size:9px;color:#94a3b8;margin-bottom:3px;">
+              <span>Week 3 · May 13–19</span><span style="font-style:italic;">~₹3,100 projected</span>
+            </div>
+            <div style="background:#1e293b;border-radius:4px;height:6px;overflow:hidden;">
+              <div style="width:62%;background:#334155;height:100%;border-radius:4px;border:1px dashed #475569;"></div>
+            </div>
+          </div>
+
+          <!-- Week 4 - projected -->
+          <div style="opacity:0.5;">
+            <div style="display:flex;justify-content:space-between;font-size:9px;color:#94a3b8;margin-bottom:3px;">
+              <span>Week 4 · May 20–31</span><span style="font-style:italic;">~₹3,600 projected</span>
+            </div>
+            <div style="background:#1e293b;border-radius:4px;height:6px;overflow:hidden;">
+              <div style="width:72%;background:#334155;height:100%;border-radius:4px;border:1px dashed #475569;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Projection summary -->
+        <div style="margin-top:14px;background:#6366f118;border:1px solid #6366f140;border-radius:8px;padding:10px;">
+          <div style="font-size:9px;color:#6366f1;font-weight:600;margin-bottom:4px;">MONTH-END PROJECTION</div>
+          <div style="font-size:14px;color:#fff;font-weight:700;">₹12,400 <span style="font-size:9px;color:#22c55e;font-weight:400;">→ ₹18,700 by May 31</span></div>
+          <div style="font-size:8px;color:#64748b;margin-top:3px;">₹1,300 under budget · avg ₹3,100/week</div>
+        </div>
+
+        <!-- Category pace -->
+        <div style="margin-top:12px;">
+          <div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Category pace this week</div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <div style="display:flex;justify-content:space-between;font-size:9px;"><span style="color:#94a3b8;">🍔 Food</span><span style="color:#ef4444;">₹1,200 · 85% of wk target ⚠</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:9px;"><span style="color:#94a3b8;">🚗 Transport</span><span style="color:#22c55e;">₹300 · on track</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:9px;"><span style="color:#94a3b8;">🛍 Shopping</span><span style="color:#facc15;">₹800 · moderate</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:20px;">
+  <h3>Budget setup flow — how you set limits</h3>
+  <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;">
+    <div style="flex:1;min-width:180px;background:#1e293b;border-radius:8px;padding:12px;">
+      <div style="font-size:9px;color:#facc15;font-weight:600;margin-bottom:6px;">1. TAP OVERALL CARD</div>
+      <div style="font-size:10px;color:#94a3b8;">Tap the Total Budget card → bottom sheet slides up → number input → Save</div>
+    </div>
+    <div style="flex:1;min-width:180px;background:#1e293b;border-radius:8px;padding:12px;">
+      <div style="font-size:9px;color:#facc15;font-weight:600;margin-bottom:6px;">2. TAP CATEGORY ROW</div>
+      <div style="font-size:10px;color:#94a3b8;">Tap any category bar → same bottom sheet → set or clear that category's limit</div>
+    </div>
+    <div style="flex:1;min-width:180px;background:#1e293b;border-radius:8px;padding:12px;">
+      <div style="font-size:9px;color:#facc15;font-weight:600;margin-bottom:6px;">3. ADD NEW CATEGORY</div>
+      <div style="font-size:10px;color:#94a3b8;">Tap "+ Set limit for another category" → category picker → amount → Save</div>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:20px;font-size:13px;color:#facc15;">Does this UI layout look right? Any changes to the screens?</p>

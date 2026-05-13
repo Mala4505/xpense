@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -37,9 +38,10 @@ import { useCategoriesMap } from '../hooks/useCategories';
 import { useSettingsStore } from '../stores/settingsStore';
 import {
   exportTransactionsCSV,
-  exportHTMLReport,
+  exportPDFReport,
   ExportTransaction,
 } from '../utils/export';
+import { useDataRefreshStore } from '../stores/dataRefreshStore';
 
 // ─── Time filter config ───────────────────────────────────────────────────────
 
@@ -393,6 +395,14 @@ export default function ReportsScreen() {
   const insets = useSafeAreaInsets();
   const currency = useSettingsStore((s) => s.defaultCurrency);
 
+  const refresh = useDataRefreshStore(s => s.refresh);
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    refresh();
+    setTimeout(() => setRefreshing(false), 500);
+  }, [refresh]);
+
   const [activeRange, setActiveRange] = useState<TimeRange>('1M');
   const [chartWidth, setChartWidth] = useState(320);
   const [exporting, setExporting] = useState(false);
@@ -435,7 +445,7 @@ export default function ReportsScreen() {
         khumus_share: t.khumus_share ?? undefined,
         created_at: t.created_at,
       }));
-      await exportHTMLReport({
+      await exportPDFReport({
         period: rangeName,
         income: periodTotals.income,
         expense: periodTotals.expense,
@@ -473,6 +483,7 @@ export default function ReportsScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 110 }]}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.brandYellow]} />}
       >
         {/* Time filter pills */}
         <MotiView

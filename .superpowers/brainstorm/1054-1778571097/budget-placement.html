@@ -1,0 +1,102 @@
+<h2>Where should budgets live in the app?</h2>
+<p class="subtitle">Your current bottom tabs: Home · History · ＋ · Reports · Settings</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="dedicated-tab" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:16px;border-radius:8px;">
+      <!-- Phone frame -->
+      <div style="background:#1e293b;border-radius:12px;padding:12px;max-width:220px;margin:0 auto;">
+        <div style="background:#0f172a;border-radius:8px;height:120px;margin-bottom:8px;padding:10px;">
+          <div style="font-size:9px;color:#facc15;font-weight:700;margin-bottom:6px;">BUDGET — MAY 2026</div>
+          <div style="background:#1e293b;border-radius:4px;height:5px;overflow:hidden;margin-bottom:4px;">
+            <div style="width:62%;background:#facc15;height:100%;border-radius:4px;"></div>
+          </div>
+          <div style="font-size:8px;color:#64748b;margin-bottom:8px;">₹12,400 of ₹20,000 · 62%</div>
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <div style="display:flex;justify-content:space-between;font-size:7px;color:#94a3b8;"><span>Food</span><div style="background:#1e293b;border-radius:2px;height:3px;width:80px;overflow:hidden;"><div style="width:85%;background:#ef4444;height:100%;"></div></div><span style="color:#ef4444;">85%</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:7px;color:#94a3b8;"><span>Transport</span><div style="background:#1e293b;border-radius:2px;height:3px;width:80px;overflow:hidden;"><div style="width:40%;background:#22c55e;height:100%;"></div></div><span style="color:#22c55e;">40%</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:7px;color:#94a3b8;"><span>Shopping</span><div style="background:#1e293b;border-radius:2px;height:3px;width:80px;overflow:hidden;"><div style="width:55%;background:#facc15;height:100%;"></div></div><span style="color:#facc15;">55%</span></div>
+          </div>
+        </div>
+        <!-- Bottom nav -->
+        <div style="display:flex;justify-content:space-around;align-items:center;padding:6px 4px 2px;border-top:1px solid #334155;">
+          <div style="text-align:center;"><div style="font-size:14px;">🏠</div><div style="font-size:6px;color:#64748b;">Home</div></div>
+          <div style="text-align:center;"><div style="font-size:14px;">📋</div><div style="font-size:6px;color:#64748b;">History</div></div>
+          <div style="text-align:center;"><div style="background:#facc15;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:2px;">+</div></div>
+          <div style="text-align:center;"><div style="font-size:14px;">💰</div><div style="font-size:6px;color:#facc15;font-weight:700;">Budget</div></div>
+          <div style="text-align:center;"><div style="font-size:14px;">⚙️</div><div style="font-size:6px;color:#64748b;">Settings</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Dedicated Budget tab</h3>
+      <p>Replace the Reports tab with a full Budget screen. Budget gets first-class navigation. Reports would move inside Settings or Budget screen.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="reports-integration" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:16px;border-radius:8px;">
+      <div style="background:#1e293b;border-radius:12px;padding:12px;max-width:220px;margin:0 auto;">
+        <div style="background:#0f172a;border-radius:8px;height:120px;margin-bottom:8px;padding:10px;">
+          <div style="display:flex;gap:6px;margin-bottom:8px;">
+            <div style="background:#facc15;border-radius:4px;padding:2px 8px;font-size:7px;color:#000;font-weight:700;">Budget</div>
+            <div style="background:#1e293b;border-radius:4px;padding:2px 8px;font-size:7px;color:#64748b;">Analytics</div>
+            <div style="background:#1e293b;border-radius:4px;padding:2px 8px;font-size:7px;color:#64748b;">Trends</div>
+          </div>
+          <div style="background:#1e293b;border-radius:4px;height:5px;overflow:hidden;margin-bottom:4px;">
+            <div style="width:62%;background:#facc15;height:100%;border-radius:4px;"></div>
+          </div>
+          <div style="font-size:8px;color:#64748b;margin-bottom:6px;">Total: ₹12,400 of ₹20,000</div>
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <div style="display:flex;justify-content:space-between;font-size:7px;color:#94a3b8;"><span>Food</span><div style="background:#1e293b;border-radius:2px;height:3px;width:80px;overflow:hidden;"><div style="width:85%;background:#ef4444;height:100%;"></div></div><span style="color:#ef4444;">85%</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:7px;color:#94a3b8;"><span>Transport</span><div style="background:#1e293b;border-radius:2px;height:3px;width:80px;overflow:hidden;"><div style="width:40%;background:#22c55e;height:100%;"></div></div><span style="color:#22c55e;">40%</span></div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-around;align-items:center;padding:6px 4px 2px;border-top:1px solid #334155;">
+          <div style="text-align:center;"><div style="font-size:14px;">🏠</div><div style="font-size:6px;color:#64748b;">Home</div></div>
+          <div style="text-align:center;"><div style="font-size:14px;">📋</div><div style="font-size:6px;color:#64748b;">History</div></div>
+          <div style="text-align:center;"><div style="background:#facc15;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:2px;">+</div></div>
+          <div style="text-align:center;"><div style="font-size:14px;">📊</div><div style="font-size:6px;color:#facc15;font-weight:700;">Reports</div></div>
+          <div style="text-align:center;"><div style="font-size:14px;">⚙️</div><div style="font-size:6px;color:#64748b;">Settings</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Budget tab inside Reports</h3>
+      <p>Reports screen gets 3 tabs: Budget · Analytics · Trends. No nav change needed. Budget is a swipe away from your existing reports.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="home-card" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:16px;border-radius:8px;">
+      <div style="background:#1e293b;border-radius:12px;padding:12px;max-width:220px;margin:0 auto;">
+        <div style="background:#0f172a;border-radius:8px;height:120px;margin-bottom:8px;padding:10px;">
+          <div style="font-size:8px;color:#94a3b8;margin-bottom:4px;">May Budget</div>
+          <div style="background:#facc15;border-radius:6px;height:5px;overflow:hidden;margin-bottom:2px;">
+            <div style="width:62%;background:#f59e0b;height:100%;border-radius:6px;"></div>
+          </div>
+          <div style="font-size:7px;color:#64748b;margin-bottom:8px;">₹12,400 of ₹20,000 · tap to manage →</div>
+          <div style="border-top:1px solid #1e293b;padding-top:6px;">
+            <div style="font-size:7px;color:#94a3b8;margin-bottom:3px;">⚠ Food 85% · Shopping 55%</div>
+            <div style="font-size:7px;color:#64748b;">Recent transactions below...</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-around;align-items:center;padding:6px 4px 2px;border-top:1px solid #334155;">
+          <div style="text-align:center;"><div style="font-size:14px;">🏠</div><div style="font-size:6px;color:#facc15;font-weight:700;">Home</div></div>
+          <div style="text-align:center;"><div style="font-size:14px;">📋</div><div style="font-size:6px;color:#64748b;">History</div></div>
+          <div style="text-align:center;"><div style="background:#facc15;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:2px;">+</div></div>
+          <div style="text-align:center;"><div style="font-size:14px;">📊</div><div style="font-size:6px;color:#64748b;">Reports</div></div>
+          <div style="text-align:center;"><div style="font-size:14px;">⚙️</div><div style="font-size:6px;color:#64748b;">Settings</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Budget card on Home + Settings for setup</h3>
+      <p>A compact budget progress bar appears on the Home screen. Tap it to open a full budget management screen. No nav changes at all.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;font-size:12px;">My recommendation: B — integrating into Reports is the least disruptive and keeps the nav clean. But A makes budget feel more important and always-accessible.</p>

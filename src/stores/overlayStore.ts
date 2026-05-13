@@ -13,6 +13,8 @@ interface OverlayState {
   // Step 2: Category
   selectedCategoryId?: string;
   personName?: string;
+  presetCategoryId?: string;
+  skipCategory: boolean;
 
   // Step 3: Note
   note: string;
@@ -20,6 +22,7 @@ interface OverlayState {
 
 interface OverlayStore extends OverlayState {
   openOverlay: () => void;
+  openWithPreset: (categoryId: string, flow: 'IN' | 'OUT') => void;
   closeOverlay: () => void;
   resetOverlay: () => void;
 
@@ -45,6 +48,8 @@ const initialState: OverlayState = {
   flow: 'OUT',
   amount: '',
   note: '',
+  presetCategoryId: undefined,
+  skipCategory: false,
 };
 
 export const useOverlayStore = create<OverlayStore>((set, get) => ({
@@ -53,6 +58,9 @@ export const useOverlayStore = create<OverlayStore>((set, get) => ({
   openOverlay: () => {
     set({ isOpen: true, step: 'amount' });
   },
+
+  openWithPreset: (categoryId, flow) =>
+    set({ isOpen: true, step: 'amount', flow, selectedCategoryId: categoryId, presetCategoryId: categoryId, skipCategory: true }),
 
   closeOverlay: () => {
     set({ isOpen: false });
@@ -71,20 +79,14 @@ export const useOverlayStore = create<OverlayStore>((set, get) => ({
   setNote: (note) => set({ note }),
 
   nextStep: () => {
-    const { step } = get();
-    if (step === 'amount') {
-      set({ step: 'category' });
-    } else if (step === 'category') {
-      set({ step: 'note' });
-    }
+    const { step, skipCategory } = get();
+    if (step === 'amount') set({ step: skipCategory ? 'note' : 'category' });
+    else if (step === 'category') set({ step: 'note' });
   },
 
   previousStep: () => {
-    const { step } = get();
-    if (step === 'category') {
-      set({ step: 'amount' });
-    } else if (step === 'note') {
-      set({ step: 'category' });
-    }
+    const { step, skipCategory } = get();
+    if (step === 'note') set({ step: skipCategory ? 'amount' : 'category' });
+    else if (step === 'category') set({ step: 'amount' });
   },
 }));

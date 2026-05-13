@@ -1027,11 +1027,12 @@
 
 
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -1056,6 +1057,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { createTransaction } from '../queries/transactions';
 import { createLoan } from '../queries/loans';
 import { Flow, PaymentMethod, TransactionStatus } from '../types';
+import { useDataRefreshStore } from '../stores/dataRefreshStore';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1101,6 +1103,14 @@ export default function AddScreen() {
   const currency = useSettingsStore((s) => s.defaultCurrency);
   const addRecentCategory = useSettingsStore((s) => s.addRecentCategory);
   const showToast = useToastStore((s) => s.showToast);
+
+  const refresh = useDataRefreshStore(s => s.refresh);
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    refresh();
+    setTimeout(() => setRefreshing(false), 500);
+  }, [refresh]);
 
   const categories = useCategories();
 
@@ -1298,6 +1308,7 @@ export default function AddScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.brandYellow]} />}
         >
           {/* ── Direction Toggle ── */}
           <MotiView
