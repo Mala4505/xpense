@@ -1058,6 +1058,7 @@ import { createTransaction } from '../queries/transactions';
 import { createLoan } from '../queries/loans';
 import { Flow, PaymentMethod, TransactionStatus } from '../types';
 import { useDataRefreshStore } from '../stores/dataRefreshStore';
+import { useBudgetStore } from '../stores/budgetStore';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1102,6 +1103,7 @@ export default function AddScreen() {
   const navigation = useNavigation();
   const currency = useSettingsStore((s) => s.defaultCurrency);
   const addRecentCategory = useSettingsStore((s) => s.addRecentCategory);
+  const pinnedCategoryNames = useSettingsStore((s) => s.pinnedCategoryNames);
   const showToast = useToastStore((s) => s.showToast);
 
   const refresh = useDataRefreshStore(s => s.refresh);
@@ -1138,10 +1140,13 @@ export default function AddScreen() {
   const numericAmount = useMemo(() => parseFloat(amount) || 0, [amount]);
 
   const filteredCategories = useMemo(() => {
-    return categories.filter(
-      (c) => c.flow_type === flow || c.flow_type === 'BOTH'
-    );
-  }, [categories, flow]);
+    return categories.filter((c) => {
+      if (c.flow_type !== flow && c.flow_type !== 'BOTH') return false;
+      // Show only pinned categories or user-created (non-system) categories
+      const hasPinned = pinnedCategoryNames.length > 0;
+      return !hasPinned || !c.is_system || pinnedCategoryNames.includes(c.name);
+    });
+  }, [categories, flow, pinnedCategoryNames]);
 
   const selectedCategory = useMemo(
     () => (selectedCategoryId ? categories.find((c) => c.id === selectedCategoryId) : null),
@@ -1241,6 +1246,12 @@ export default function AddScreen() {
 
       addRecentCategory(selectedCategoryId!);
 
+      const bs = useBudgetStore.getState();
+      if (bs._db) {
+        await bs.refresh();
+        bs.checkAlerts();
+      }
+
       const catName = selectedCategory?.name ?? '';
       const prefix = flow === 'IN' ? '+ ' : '− ';
       showToast(
@@ -1308,7 +1319,7 @@ export default function AddScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.brandYellow]} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brandNavy} colors={[colors.brandNavy]} />}
         >
           {/* ── Direction Toggle ── */}
           <MotiView

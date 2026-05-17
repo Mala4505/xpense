@@ -1,8 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
+  Animated,
   Dimensions,
+  KeyboardAvoidingView,
   Modal,
+  PanResponder,
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -13,6 +17,8 @@ import {
   View,
   ActivityIndicator,
 } from 'react-native';
+import { Accelerometer } from 'expo-sensors';
+import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,7 +26,7 @@ import { colors } from '../theme/colors';
 import { fonts } from '../theme/fonts';
 import { CURRENCY_LIST } from '../utils/currency';
 import { useCategories, useCategoriesMap, RawCategory } from '../hooks/useCategories';
-import { useSettingsStore, BackTapSensitivity } from '../stores/settingsStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { useAllTransactions } from '../hooks/useTransactions';
 import { useSQLiteContext } from 'expo-sqlite';
 import { createCategory, updateCategory, deleteCategory } from '../queries/categories';
@@ -154,7 +160,10 @@ function AddCategoryModal({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={addCatStyles.overlay}>
+      <KeyboardAvoidingView
+        style={addCatStyles.overlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         <TouchableOpacity style={{ flex: 1 }} onPress={onClose} />
         <MotiView
           from={{ translateY: 60, opacity: 0 }}
@@ -244,7 +253,7 @@ function AddCategoryModal({
             )}
           </TouchableOpacity>
         </MotiView>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -255,16 +264,18 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 
 function CategoryChip({
   category,
+  isPinned,
   onPress,
   onLongPress,
 }: {
   category: RawCategory;
+  isPinned?: boolean;
   onPress: () => void;
   onLongPress: () => void;
 }) {
   return (
     <TouchableOpacity
-      style={catGridStyles.chip}
+      style={[catGridStyles.chip, isPinned && catGridStyles.chipPinned]}
       onPress={onPress}
       onLongPress={onLongPress}
       activeOpacity={0.75}
@@ -273,9 +284,165 @@ function CategoryChip({
         <Text style={catGridStyles.chipInitial}>
           {category.name.charAt(0).toUpperCase()}
         </Text>
+        {isPinned && <View style={catGridStyles.pinnedDot} />}
       </View>
       <Text style={catGridStyles.chipLabel} numberOfLines={1}>{category.name}</Text>
     </TouchableOpacity>
+  );
+}
+
+// ─── Back-Tap Slider ──────────────────────────────────────────────────────────
+
+function BackTapSlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const trackWidthRef = useRef(0);
+  const startValueRef = useRef(value);
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gs) =>
+        Math.abs(gs.dx) > Math.abs(gs.dy),
+      onPanResponderGrant: () => {
+        startValueRef.current = valueRef.current;
+      },
+      onPanResponderMove: (_, gs) => {
+        if (trackWidthRef.current === 0) return;
+        const delta = gs.dx / trackWidthRef.current;
+        const next = Math.max(0, Math.min(1, startValueRef.current + delta));
+        onChange(next);
+      },
+    })
+  ).current;
+
+  const label = value < 0.33 ? 'Low' : value < 0.67 ? 'Medium' : 'High';
+  const thumbLeft = `${Math.round(value * 100)}%` as any;
+
+  return (
+    <View style={sliderStyles.wrap}>
+      <View
+        style={sliderStyles.track}
+        onLayout={(e) => { trackWidthRef.current = e.nativeEvent.layout.width; }}
+        {...panResponder.panHandlers}
+      >
+        <View style={[sliderStyles.fill, { width: thumbLeft }]} />
+        <View style={[sliderStyles.thumb, { left: thumbLeft }]} />
+      </View>
+      <View style={sliderStyles.labelRow}>
+        <Text style={sliderStyles.labelSide}>Low</Text>
+        <Text style={sliderStyles.labelCurrent}>{label}</Text>
+        <Text style={sliderStyles.labelSide}>High</Text>
+      </View>
+    </View>
+  );
+}
+
+// ─── Back-Tap Test Row ────────────────────────────────────────────────────────
+
+const TAP_THRESHOLD_SETTINGS = 2.4;
+const MIN_TAP_INTERVAL_SETTINGS = 280;
+
+function BackTapTestRow({ sensitivity }: { sensitivity: number }) {
+  const [state, setState] = useState<'idle' | 'listening' | 'success'>('idle');
+  const [tapCount, setTapCount] = useState(0);
+  const tapCountRef = useRef(0);
+  const lastTapTimeRef = useRef(0);
+  const subscriptionRef = useRef<any>(null);
+  const timeoutRef = useRef<any>(null);
+
+  function stopListening() {
+    subscriptionRef.current?.remove();
+    subscriptionRef.current = null;
+    clearTimeout(timeoutRef.current);
+  }
+
+  async function startTest() {
+    const available = await Accelerometer.isAvailableAsync();
+    if (!available) {
+      Alert.alert('Not Available', 'Accelerometer is not available on this device.');
+      return;
+    }
+    tapCountRef.current = 0;
+    setTapCount(0);
+    setState('listening');
+
+    // Adjust threshold based on sensitivity (higher sensitivity = lower threshold)
+    const threshold = 3.2 - sensitivity * 2.0;
+
+    Accelerometer.setUpdateInterval(40);
+    subscriptionRef.current = Accelerometer.addListener(({ x, y, z }) => {
+      const mag = Math.sqrt(x * x + y * y + z * z);
+      if (mag > threshold) {
+        const now = Date.now();
+        if (now - lastTapTimeRef.current > MIN_TAP_INTERVAL_SETTINGS) {
+          lastTapTimeRef.current = now;
+          tapCountRef.current += 1;
+          const count = tapCountRef.current;
+          setTapCount(count);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          if (count >= 3) {
+            stopListening();
+            setState('success');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            timeoutRef.current = setTimeout(() => {
+              setState('idle');
+              setTapCount(0);
+              tapCountRef.current = 0;
+            }, 2500);
+          }
+        }
+      }
+    });
+
+    // Auto-stop after 10 s if no success
+    timeoutRef.current = setTimeout(() => {
+      stopListening();
+      setState('idle');
+      setTapCount(0);
+      tapCountRef.current = 0;
+    }, 10000);
+  }
+
+  useEffect(() => () => stopListening(), []);
+
+  return (
+    <View style={testRowStyles.row}>
+      <View style={[styles.settingsRowIcon]}>
+        <Ionicons name="finger-print" size={16} color={colors.brandPurple} />
+      </View>
+      <View style={styles.settingsRowMid}>
+        <Text style={styles.settingsRowLabel}>Test Back Tap</Text>
+        {state === 'listening' && (
+          <Text style={styles.settingsRowSub}>
+            {tapCount === 0 ? 'Tap back of phone 3×…' : `${3 - tapCount} more…`}
+          </Text>
+        )}
+        {state === 'success' && (
+          <Text style={[styles.settingsRowSub, { color: colors.income }]}>Detected!</Text>
+        )}
+      </View>
+      {state === 'idle' && (
+        <TouchableOpacity style={testRowStyles.testBtn} onPress={startTest} activeOpacity={0.75}>
+          <Text style={testRowStyles.testBtnText}>Test</Text>
+        </TouchableOpacity>
+      )}
+      {state === 'listening' && (
+        <View style={testRowStyles.dotsRow}>
+          {[0, 1, 2].map((i) => (
+            <View
+              key={i}
+              style={[testRowStyles.dot, i < tapCount && testRowStyles.dotFilled]}
+            />
+          ))}
+        </View>
+      )}
+      {state === 'success' && (
+        <View style={testRowStyles.successBadge}>
+          <Ionicons name="checkmark" size={14} color="white" />
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -317,7 +484,10 @@ function CurrencyPickerModal({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={currStyle.overlay}>
+      <KeyboardAvoidingView
+        style={currStyle.overlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         <TouchableOpacity style={{ flex: 1 }} onPress={onClose} />
         <View style={currStyle.sheet}>
           <View style={currStyle.handle} />
@@ -350,8 +520,96 @@ function CurrencyPickerModal({
             ))}
           </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
+  );
+}
+
+// ─── Budget Alert Row ─────────────────────────────────────────────────────────
+
+function BudgetAlertRow({
+  icon,
+  label,
+  sublabel,
+  switchValue,
+  onToggle,
+  disabled,
+  threshold,
+  onThresholdChange,
+}: {
+  icon: string;
+  label: string;
+  sublabel: string;
+  switchValue: boolean;
+  onToggle?: (v: boolean) => void;
+  disabled?: boolean;
+  threshold?: number;
+  onThresholdChange?: (v: number) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [inputVal, setInputVal] = useState('');
+
+  function handleBadgePress() {
+    setInputVal(String(threshold));
+    setEditing(true);
+  }
+
+  function handleCommit() {
+    const n = parseInt(inputVal, 10);
+    if (n >= 1 && n <= 100) onThresholdChange?.(n);
+    setEditing(false);
+  }
+
+  return (
+    <View style={styles.settingsRow}>
+      <View style={[styles.settingsRowIcon, disabled && { backgroundColor: colors.surfaceElevated }]}>
+        <Ionicons
+          name={icon as any}
+          size={16}
+          color={disabled ? colors.textDisabled : colors.brandPurple}
+        />
+      </View>
+      <View style={styles.settingsRowMid}>
+        <View style={baStyles.labelRow}>
+          <Text style={[styles.settingsRowLabel, disabled && { color: colors.textMuted }]}>
+            {label}
+          </Text>
+          {threshold !== undefined && (
+            editing ? (
+              <TextInput
+                style={baStyles.threshInput}
+                value={inputVal}
+                onChangeText={setInputVal}
+                keyboardType="number-pad"
+                maxLength={3}
+                autoFocus
+                onBlur={handleCommit}
+                onSubmitEditing={handleCommit}
+              />
+            ) : (
+              <TouchableOpacity
+                style={baStyles.threshBadge}
+                onPress={handleBadgePress}
+                activeOpacity={0.75}
+              >
+                <Text style={baStyles.threshBadgeText}>{threshold}%</Text>
+              </TouchableOpacity>
+            )
+          )}
+        </View>
+        <Text style={styles.settingsRowSub}>{sublabel}</Text>
+      </View>
+      {disabled ? (
+        <Ionicons name="lock-closed-outline" size={14} color={colors.textDisabled} />
+      ) : (
+        <Switch
+          value={switchValue}
+          onValueChange={onToggle}
+          trackColor={{ false: colors.surfaceBorder, true: colors.brandViolet + '66' }}
+          thumbColor={switchValue ? colors.brandViolet : colors.textDisabled}
+        />
+      )}
+    </View>
   );
 }
 
@@ -366,6 +624,11 @@ export default function SettingsScreen() {
   const setSensitivity = useSettingsStore((s) => s.setBackTapSensitivity);
   const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled);
   const setNotificationsEnabled = useSettingsStore((s) => s.setNotificationsEnabled);
+  const userName = useSettingsStore((s) => s.userName);
+  const pinnedCategoryNames = useSettingsStore((s) => s.pinnedCategoryNames);
+  const setHasCompletedOnboarding = useSettingsStore((s) => s.setHasCompletedOnboarding);
+  const budgetAlerts = useSettingsStore((s) => s.budgetAlerts);
+  const setBudgetAlerts = useSettingsStore((s) => s.setBudgetAlerts);
 
   const refresh = useDataRefreshStore(s => s.refresh);
   const [refreshing, setRefreshing] = useState(false);
@@ -389,12 +652,6 @@ export default function SettingsScreen() {
     categories.filter((c) => catTab === 'All' ? true : c.flow_type === catTab),
     [categories, catTab]
   );
-
-  const SENSITIVITY_OPTIONS: { key: BackTapSensitivity; label: string }[] = [
-    { key: 'low', label: 'Low' },
-    { key: 'medium', label: 'Medium' },
-    { key: 'high', label: 'High' },
-  ];
 
   async function handleDeleteCategory(cat: RawCategory) {
     if (cat.is_system) {
@@ -460,7 +717,7 @@ export default function SettingsScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 110 }]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.brandYellow]} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brandNavy} colors={[colors.brandNavy]} />}
       >
         {/* ── Preferences ── */}
         <MotiView
@@ -477,34 +734,19 @@ export default function SettingsScreen() {
               onPress={() => setShowCurrencyPicker(true)}
             />
             <View style={styles.rowDivider} />
-            <SettingsRow
-              icon="phone-portrait-outline"
-              label="Back-Tap Sensitivity"
-              right={
-                <View style={styles.sensitivityRow}>
-                  {SENSITIVITY_OPTIONS.map((o) => (
-                    <TouchableOpacity
-                      key={o.key}
-                      style={[
-                        styles.sensitivityChip,
-                        sensitivity === o.key && styles.sensitivityChipActive,
-                      ]}
-                      onPress={() => setSensitivity(o.key)}
-                      activeOpacity={0.75}
-                    >
-                      <Text
-                        style={[
-                          styles.sensitivityChipText,
-                          sensitivity === o.key && styles.sensitivityChipTextActive,
-                        ]}
-                      >
-                        {o.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+            <View style={styles.sensitivityBlock}>
+              <View style={styles.sensitivityBlockHeader}>
+                <View style={styles.settingsRowIcon}>
+                  <Ionicons name="phone-portrait-outline" size={16} color={colors.brandPurple} />
                 </View>
-              }
-            />
+                <Text style={[styles.settingsRowLabel, { flex: 1, marginLeft: 12 }]}>
+                  Back-Tap Sensitivity
+                </Text>
+              </View>
+              <BackTapSlider value={sensitivity} onChange={setSensitivity} />
+            </View>
+            <View style={styles.rowDivider} />
+            <BackTapTestRow sensitivity={sensitivity} />
             <View style={styles.rowDivider} />
             <SettingsRow
               icon="notifications-outline"
@@ -551,6 +793,7 @@ export default function SettingsScreen() {
               <CategoryChip
                 key={cat.id}
                 category={cat}
+                isPinned={pinnedCategoryNames.includes(cat.name)}
                 onPress={() => setEditingCategory(cat)}
                 onLongPress={() => handleDeleteCategory(cat)}
               />
@@ -565,6 +808,52 @@ export default function SettingsScreen() {
               </View>
               <Text style={catGridStyles.chipLabel}>Add</Text>
             </TouchableOpacity>
+          </View>
+        </MotiView>
+
+        {/* ── Budget Alerts ── */}
+        <MotiView
+          from={{ opacity: 0, translateY: 10 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: 'spring', delay: 120, damping: 22, stiffness: 280 }}
+        >
+          <SectionHeader title="Budget Alerts" />
+          <View style={styles.card}>
+            <BudgetAlertRow
+              icon="alert-circle-outline"
+              label="Early warning"
+              sublabel="Alert at threshold % of budget used"
+              switchValue={budgetAlerts.threshold1Enabled}
+              onToggle={(v) => setBudgetAlerts({ threshold1Enabled: v })}
+              threshold={budgetAlerts.threshold1Value}
+              onThresholdChange={(v) => setBudgetAlerts({ threshold1Value: v })}
+            />
+            <View style={styles.rowDivider} />
+            <BudgetAlertRow
+              icon="warning-outline"
+              label="Final warning"
+              sublabel="Alert at threshold % of budget used"
+              switchValue={budgetAlerts.threshold2Enabled}
+              onToggle={(v) => setBudgetAlerts({ threshold2Enabled: v })}
+              threshold={budgetAlerts.threshold2Value}
+              onThresholdChange={(v) => setBudgetAlerts({ threshold2Value: v })}
+            />
+            <View style={styles.rowDivider} />
+            <BudgetAlertRow
+              icon="ban-outline"
+              label="Limit exceeded"
+              sublabel="Always enabled"
+              switchValue={true}
+              disabled
+            />
+            <View style={styles.rowDivider} />
+            <BudgetAlertRow
+              icon="calendar-outline"
+              label="Weekly digest"
+              sublabel="Every Monday at 9am"
+              switchValue={budgetAlerts.weeklyDigestEnabled}
+              onToggle={(v) => setBudgetAlerts({ weeklyDigestEnabled: v })}
+            />
           </View>
         </MotiView>
 
@@ -612,10 +901,36 @@ export default function SettingsScreen() {
                 <Ionicons name="heart-outline" size={16} color={colors.brandPurple} />
               </View>
               <View style={styles.settingsRowMid}>
-                <Text style={styles.settingsRowLabel}>Built for Aliasger</Text>
+                <Text style={styles.settingsRowLabel}>Built for {userName || 'You'}</Text>
                 <Text style={styles.settingsRowSub}>Xpense — Personal Finance Tracker</Text>
               </View>
             </View>
+          </View>
+        </MotiView>
+
+        {/* ── Developer ── */}
+        <MotiView
+          from={{ opacity: 0, translateY: 10 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: 'spring', delay: 220, damping: 22, stiffness: 280 }}
+        >
+          <SectionHeader title="Developer" />
+          <View style={styles.card}>
+            <SettingsRow
+              icon="refresh-outline"
+              label="Preview Onboarding"
+              sublabel="Re-run the onboarding flow"
+              onPress={() =>
+                Alert.alert(
+                  'Preview Onboarding',
+                  'This will restart the onboarding flow. Your data and settings are kept.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Preview', onPress: () => setHasCompletedOnboarding(false) },
+                  ]
+                )
+              }
+            />
           </View>
         </MotiView>
       </ScrollView>
@@ -716,27 +1031,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.textMuted,
   },
-  /* Sensitivity chips */
-  sensitivityRow: {
+  /* Sensitivity slider block */
+  sensitivityBlock: {
+    paddingHorizontal: 14,
+    paddingTop: 13,
+    paddingBottom: 10,
+    gap: 10,
+  },
+  sensitivityBlockHeader: {
     flexDirection: 'row',
-    gap: 4,
-  },
-  sensitivityChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: colors.surfaceElevated,
-  },
-  sensitivityChipActive: {
-    backgroundColor: colors.brandNavy,
-  },
-  sensitivityChipText: {
-    fontFamily: fonts.sansMedium,
-    fontSize: 10,
-    color: colors.textMuted,
-  },
-  sensitivityChipTextActive: {
-    color: colors.textInverse,
+    alignItems: 'center',
   },
   /* Swipeable category row */
   swipeWrap: {
@@ -1102,5 +1406,163 @@ const catGridStyles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.brandPurple,
     borderStyle: 'dashed',
+  },
+  chipPinned: {
+    backgroundColor: colors.brandPale,
+    borderRadius: 14,
+  },
+  pinnedDot: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.brandYellow,
+    borderWidth: 1.5,
+    borderColor: 'white',
+  },
+});
+
+// ─── Slider styles ────────────────────────────────────────────────────────────
+
+const sliderStyles = StyleSheet.create({
+  wrap: {
+    gap: 6,
+    paddingHorizontal: 4,
+  },
+  track: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#e9ddff',
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  fill: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: 3,
+    backgroundColor: colors.brandNavy,
+  },
+  thumb: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'white',
+    borderWidth: 2,
+    borderColor: colors.brandNavy,
+    marginLeft: -10,
+    top: -7,
+    shadowColor: colors.brandNavy,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  labelSide: {
+    fontFamily: fonts.sans,
+    fontSize: 10,
+    color: colors.textMuted,
+  },
+  labelCurrent: {
+    fontFamily: fonts.sansBold,
+    fontSize: 11,
+    color: colors.brandNavy,
+  },
+});
+
+// ─── Budget Alert Row styles ──────────────────────────────────────────────────
+
+const baStyles = StyleSheet.create({
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  threshBadge: {
+    backgroundColor: colors.brandPale,
+    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: colors.brandPurple + '44',
+  },
+  threshBadgeText: {
+    fontFamily: fonts.sansBold,
+    fontSize: 11,
+    color: colors.brandPurple,
+  },
+  threshInput: {
+    backgroundColor: colors.surfaceCard,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.brandPurple,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    color: colors.textPrimary,
+    minWidth: 40,
+    textAlign: 'center',
+    padding: 0,
+  },
+});
+
+// ─── Test row styles ──────────────────────────────────────────────────────────
+
+const testRowStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    gap: 12,
+    minHeight: 52,
+  },
+  testBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: colors.brandPale,
+    borderWidth: 1,
+    borderColor: colors.brandPurple + '44',
+  },
+  testBtnText: {
+    fontFamily: fonts.sansBold,
+    fontSize: 11,
+    color: colors.brandPurple,
+  },
+  dotsRow: {
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center',
+  },
+  dot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 1.5,
+    borderColor: '#d0c4f0',
+    backgroundColor: 'transparent',
+  },
+  dotFilled: {
+    backgroundColor: '#7042c3',
+    borderColor: '#7042c3',
+  },
+  successBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: colors.income,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

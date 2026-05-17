@@ -1,4 +1,16 @@
 export const CREATE_TABLES_SQL = `
+CREATE TABLE IF NOT EXISTS budgets (
+  id          TEXT PRIMARY KEY,
+  category_id TEXT,
+  month       TEXT NOT NULL,
+  amount_limit REAL NOT NULL,
+  currency    TEXT NOT NULL,
+  period      TEXT NOT NULL DEFAULT 'monthly',
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  UNIQUE(category_id, month)
+);
+
 CREATE TABLE IF NOT EXISTS transactions (
   id TEXT PRIMARY KEY,
   flow TEXT NOT NULL,

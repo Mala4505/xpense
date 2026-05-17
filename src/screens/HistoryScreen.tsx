@@ -199,7 +199,7 @@ export default function HistoryScreen() {
           ]}
           showsVerticalScrollIndicator={false}
           stickySectionHeadersEnabled={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.brandYellow]} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brandNavy} colors={[colors.brandNavy]} />}
           renderSectionHeader={({ section }) => (
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionHeaderText}>{section.title}</Text>

@@ -218,7 +218,7 @@ export default function LoansScreen() {
           loanStyles.scrollContent,
           { paddingBottom: insets.bottom + 32 },
         ]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.brandYellow]} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brandNavy} colors={[colors.brandNavy]} />}
       >
         {/* Summary row */}
         <MotiView

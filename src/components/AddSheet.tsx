@@ -262,6 +262,8 @@ export function AddSheet() {
       backdropComponent={renderBackdrop}
       handleIndicatorStyle={{ backgroundColor: colors.surfaceBorder }}
       backgroundStyle={{ backgroundColor: colors.surfaceCard }}
+      keyboardBehavior="extend"
+      keyboardBlurBehavior="restore"
     >
       <BottomSheetScrollView
         contentContainerStyle={[

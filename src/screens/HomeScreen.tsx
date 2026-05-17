@@ -60,6 +60,15 @@ export default function HomeScreen() {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const currency = useSettingsStore((s) => s.defaultCurrency);
+  const userName = useSettingsStore((s) => s.userName);
+  const displayName = userName.trim().split(' ')[0] || 'You';
+  const initials = (() => {
+    const trimmed = userName.trim();
+    if (!trimmed) return 'ME';
+    const words = trimmed.split(/\s+/);
+    if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+    return trimmed.slice(0, 2).toUpperCase();
+  })();
   const netBalance = useNetBalance();
   const incomeTotal = useIncomeTotal();
   const expenseTotal = useExpenseTotal();
@@ -90,9 +99,9 @@ export default function HomeScreen() {
       <View style={styles.topNav}>
         <View style={styles.avatarRow}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>AL</Text>
+            <Text style={styles.avatarText}>{initials}</Text>
           </View>
-          <Text style={styles.userName}>Aliasger</Text>
+          <Text style={styles.userName}>{displayName}</Text>
         </View>
         <TouchableOpacity style={styles.bellBtn} onPress={() => setShowNotifications(true)}>
           <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />

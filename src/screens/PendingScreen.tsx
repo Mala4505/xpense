@@ -239,7 +239,7 @@ export default function PendingScreen() {
           pendingStyles.scrollContent,
           { paddingBottom: insets.bottom + 32, flexGrow: 1 },
         ]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.brandYellow]} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brandNavy} colors={[colors.brandNavy]} />}
       >
         {pending.length === 0 ? (
           <MotiView

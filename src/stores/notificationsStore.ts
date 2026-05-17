@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export type NotificationType = 'transaction' | 'monthly' | 'khumus';
+export type NotificationType = 'transaction' | 'monthly' | 'khumus' | 'budget';
 
 export interface AppNotification {
   id: string;

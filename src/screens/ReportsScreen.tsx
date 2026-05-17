@@ -1,7 +1,8 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -10,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, {
@@ -34,14 +36,19 @@ import {
   TimeRange,
 } from '../hooks/useComputed';
 import { useAllTransactions } from '../hooks/useTransactions';
-import { useCategoriesMap } from '../hooks/useCategories';
+import { useCategories, useCategoriesMap, RawCategory } from '../hooks/useCategories';
 import { useSettingsStore } from '../stores/settingsStore';
+import { useBudgetStore } from '../stores/budgetStore';
 import {
   exportTransactionsCSV,
   exportPDFReport,
   ExportTransaction,
 } from '../utils/export';
 import { useDataRefreshStore } from '../stores/dataRefreshStore';
+import { BudgetCard } from '../components/budget/BudgetCard';
+import { CategoryBudgetRow } from '../components/budget/CategoryBudgetRow';
+import { BudgetSetupSheet } from '../components/budget/BudgetSetupSheet';
+import { WeeklyPaceView } from '../components/budget/WeeklyPaceView';
 
 // ─── Time filter config ───────────────────────────────────────────────────────
 
@@ -57,7 +64,7 @@ const RANGE_TO_DATE_KEY: Record<TimeRange, Parameters<typeof getDateRangeTimesta
   '1D': 'today',
   '7D': 'week',
   '1M': 'month',
-  '3M': 'month', // will override below
+  '3M': 'month',
   '1Y': 'year',
 };
 
@@ -137,7 +144,6 @@ function LineChart({ data, width }: ChartProps) {
   const touched = touchedIndex !== null ? data[touchedIndex] : null;
   const touchX = touchedIndex !== null ? xPos(touchedIndex) : 0;
 
-  // Label visibility: show every Nth label to avoid crowding
   const labelStep = Math.ceil(data.length / 7);
 
   return (
@@ -160,7 +166,6 @@ function LineChart({ data, width }: ChartProps) {
           </LinearGradient>
         </Defs>
 
-        {/* Grid lines */}
         {yTicks.map((t, i) => (
           <SvgLine
             key={i}
@@ -173,7 +178,6 @@ function LineChart({ data, width }: ChartProps) {
           />
         ))}
 
-        {/* Y labels */}
         {yTicks.map((t, i) => (
           <SvgText
             key={i}
@@ -188,15 +192,9 @@ function LineChart({ data, width }: ChartProps) {
           </SvgText>
         ))}
 
-        {/* Area fills */}
-        {incPath && (
-          <Path d={buildArea(incPts, incPath)} fill="url(#incGrad)" />
-        )}
-        {expPath && (
-          <Path d={buildArea(expPts, expPath)} fill="url(#expGrad)" />
-        )}
+        {incPath && <Path d={buildArea(incPts, incPath)} fill="url(#incGrad)" />}
+        {expPath && <Path d={buildArea(expPts, expPath)} fill="url(#expGrad)" />}
 
-        {/* Income line */}
         {incPath && (
           <Path
             d={incPath}
@@ -207,7 +205,6 @@ function LineChart({ data, width }: ChartProps) {
             strokeLinejoin="round"
           />
         )}
-        {/* Expense line */}
         {expPath && (
           <Path
             d={expPath}
@@ -219,7 +216,6 @@ function LineChart({ data, width }: ChartProps) {
           />
         )}
 
-        {/* X labels */}
         {data.map((d, i) => {
           if (!d.label) return null;
           if (i !== 0 && i !== data.length - 1 && i % labelStep !== 0) return null;
@@ -238,7 +234,6 @@ function LineChart({ data, width }: ChartProps) {
           );
         })}
 
-        {/* Touch indicator */}
         {touched && touchedIndex !== null && (
           <>
             <SvgLine
@@ -250,7 +245,6 @@ function LineChart({ data, width }: ChartProps) {
               strokeWidth={1}
               strokeDasharray="3,3"
             />
-            {/* Income dot */}
             <Circle
               cx={touchX}
               cy={yPos(touched.income)}
@@ -259,7 +253,6 @@ function LineChart({ data, width }: ChartProps) {
               stroke="white"
               strokeWidth={1.5}
             />
-            {/* Expense dot */}
             <Circle
               cx={touchX}
               cy={yPos(touched.expense)}
@@ -268,7 +261,6 @@ function LineChart({ data, width }: ChartProps) {
               stroke="white"
               strokeWidth={1.5}
             />
-            {/* Tooltip */}
             <Rect
               x={Math.min(touchX + 6, PAD.left + cW - 82)}
               y={PAD.top + 4}
@@ -322,8 +314,6 @@ function formatYLabel(val: number): string {
   return Math.round(val).toString();
 }
 
-// ─── Chart Legend ─────────────────────────────────────────────────────────────
-
 function ChartLegend() {
   return (
     <View style={styles.legend}>
@@ -338,8 +328,6 @@ function ChartLegend() {
     </View>
   );
 }
-
-// ─── Category bar row ─────────────────────────────────────────────────────────
 
 function CategoryBreakdownRow({
   name,
@@ -389,20 +377,274 @@ function CategoryBreakdownRow({
   );
 }
 
+// ─── Category Picker Modal ────────────────────────────────────────────────────
+
+function CategoryPickerModal({
+  visible,
+  categories,
+  onSelect,
+  onClose,
+}: {
+  visible: boolean;
+  categories: RawCategory[];
+  onSelect: (cat: RawCategory) => void;
+  onClose: () => void;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={cpStyles.overlay}>
+        <TouchableOpacity style={{ flex: 1 }} onPress={onClose} />
+        <View style={cpStyles.sheet}>
+          <View style={cpStyles.handle} />
+          <Text style={cpStyles.title}>Choose Category</Text>
+          <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 360 }}>
+            {categories.map((cat) => (
+              <TouchableOpacity
+                key={cat.id}
+                style={cpStyles.row}
+                onPress={() => onSelect(cat)}
+                activeOpacity={0.7}
+              >
+                <View style={[cpStyles.dot, { backgroundColor: cat.color }]} />
+                <Text style={cpStyles.name}>{cat.name}</Text>
+                <Ionicons name="chevron-forward" size={14} color={colors.textDisabled} />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+// ─── Budget Tab Content ───────────────────────────────────────────────────────
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+function BudgetTabContent({ currency }: { currency: string }) {
+  const budgets = useBudgetStore((s) => s.budgets);
+  const weeklyPace = useBudgetStore((s) => s.weeklyPace);
+  const projectedMonthEnd = useBudgetStore((s) => s.projectedMonthEnd);
+  const refresh = useBudgetStore((s) => s.refresh);
+  const categories = useCategories();
+  const catMap = useCategoriesMap();
+
+  const [viewMonth, setViewMonth] = useState(new Date());
+  const [viewMode, setViewMode] = useState<'monthly' | 'weekly'>('monthly');
+  const [setupSheet, setSetupSheet] = useState<{
+    categoryId: string | null;
+    categoryName?: string;
+    existingBudgetId?: string;
+    initialLimit?: number;
+  } | null>(null);
+  const [showCatPicker, setShowCatPicker] = useState(false);
+
+  const viewMonthRef = useRef(viewMonth);
+  viewMonthRef.current = viewMonth;
+
+  const isCurrentMonth =
+    viewMonth.getFullYear() === new Date().getFullYear() &&
+    viewMonth.getMonth() === new Date().getMonth();
+
+  const monthLabel = `${MONTH_NAMES[viewMonth.getMonth()]} ${viewMonth.getFullYear()}`;
+
+  // Refresh when viewMonth changes
+  React.useEffect(() => {
+    refresh(viewMonth);
+  }, [viewMonth]);
+
+  // Refresh on screen focus (e.g. returning from AddScreen)
+  useFocusEffect(
+    useCallback(() => {
+      refresh(viewMonthRef.current);
+    }, [])
+  );
+
+  const overall = budgets.find((b) => b.categoryId === null);
+  const categoryBudgets = budgets.filter((b) => b.categoryId !== null);
+  const budgetCatIds = new Set(categoryBudgets.map((b) => b.categoryId));
+  const availableCats = categories.filter(
+    (c) => !budgetCatIds.has(c.id) && (c.flow_type === 'OUT' || c.flow_type === 'BOTH')
+  );
+
+  if (viewMode === 'weekly') {
+    return (
+      <View style={btStyles.container}>
+        <WeeklyPaceView onBack={() => setViewMode('monthly')} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={btStyles.container}>
+      {/* Month navigator */}
+      <View style={btStyles.monthNav}>
+        <TouchableOpacity
+          onPress={() => setViewMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1))}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="chevron-back" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
+        <Text style={btStyles.monthLabel}>{monthLabel}</Text>
+        <TouchableOpacity
+          onPress={() => setViewMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1))}
+          disabled={isCurrentMonth}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={isCurrentMonth ? colors.textDisabled : colors.textMuted}
+          />
+        </TouchableOpacity>
+      </View>
+
+      {/* Overall budget card or empty state */}
+      {overall ? (
+        <BudgetCard
+          budget={overall}
+          monthLabel={monthLabel}
+          onPress={() =>
+            isCurrentMonth
+              ? setSetupSheet({
+                  categoryId: null,
+                  existingBudgetId: overall.id,
+                  initialLimit: overall.amountLimit,
+                })
+              : undefined
+          }
+        />
+      ) : isCurrentMonth ? (
+        <TouchableOpacity
+          style={btStyles.emptyCard}
+          onPress={() => setSetupSheet({ categoryId: null })}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="wallet-outline" size={28} color={colors.textDisabled} />
+          <Text style={btStyles.emptyCardTitle}>No monthly budget set</Text>
+          <Text style={btStyles.emptyCardSub}>Tap to set your spending limit for {monthLabel}</Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={btStyles.emptyCard}>
+          <Ionicons name="calendar-outline" size={28} color={colors.textDisabled} />
+          <Text style={btStyles.emptyCardTitle}>No budget was set for {monthLabel}</Text>
+        </View>
+      )}
+
+      {/* Weekly pace strip */}
+      {overall && isCurrentMonth && (
+        <TouchableOpacity
+          style={btStyles.paceStrip}
+          onPress={() => setViewMode('weekly')}
+          activeOpacity={0.8}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={btStyles.paceMain}>
+              {currency} {formatAmount(weeklyPace)}/wk avg
+            </Text>
+            <Text style={btStyles.paceSub}>
+              {projectedMonthEnd <= overall.amountLimit ? 'On track' : '⚠ Pace exceeds budget'}
+            </Text>
+          </View>
+          <Text style={btStyles.paceLink}>Weekly view</Text>
+          <Ionicons name="chevron-forward" size={14} color={colors.pending} />
+        </TouchableOpacity>
+      )}
+
+      {/* Category budgets */}
+      {categoryBudgets.length > 0 && (
+        <View style={btStyles.section}>
+          <Text style={btStyles.sectionTitle}>Category Limits</Text>
+          <View style={btStyles.card}>
+            {categoryBudgets.map((b, i) => {
+              const cat = catMap.get(b.categoryId!);
+              if (!cat) return null;
+              return (
+                <View key={b.id}>
+                  {i > 0 && <View style={btStyles.divider} />}
+                  <CategoryBudgetRow
+                    budget={b}
+                    categoryName={cat.name}
+                    categoryColor={cat.color}
+                    categoryIcon={cat.icon}
+                    index={i}
+                    onPress={
+                      isCurrentMonth
+                        ? () =>
+                            setSetupSheet({
+                              categoryId: b.categoryId,
+                              categoryName: cat.name,
+                              existingBudgetId: b.id,
+                              initialLimit: b.amountLimit,
+                            })
+                        : () => {}
+                    }
+                  />
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      )}
+
+      {/* Add category limit */}
+      {isCurrentMonth && availableCats.length > 0 && (
+        <TouchableOpacity
+          style={btStyles.addCatRow}
+          onPress={() => setShowCatPicker(true)}
+          activeOpacity={0.75}
+        >
+          <Ionicons name="add-circle-outline" size={18} color={colors.brandViolet} />
+          <Text style={btStyles.addCatText}>Set limit for another category</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Budget setup sheet */}
+      {setupSheet && (
+        <BudgetSetupSheet
+          visible
+          onClose={() => setSetupSheet(null)}
+          categoryId={setupSheet.categoryId}
+          categoryName={setupSheet.categoryName}
+          existingBudgetId={setupSheet.existingBudgetId}
+          initialLimit={setupSheet.initialLimit}
+        />
+      )}
+
+      {/* Category picker */}
+      <CategoryPickerModal
+        visible={showCatPicker}
+        categories={availableCats}
+        onSelect={(cat) => {
+          setShowCatPicker(false);
+          setSetupSheet({ categoryId: cat.id, categoryName: cat.name });
+        }}
+        onClose={() => setShowCatPicker(false)}
+      />
+    </View>
+  );
+}
+
 // ─── Main Screen ──────────────────────────────────────────────────────────────
+
+type MainTab = 'budget' | 'analytics' | 'trends';
 
 export default function ReportsScreen() {
   const insets = useSafeAreaInsets();
   const currency = useSettingsStore((s) => s.defaultCurrency);
 
-  const refresh = useDataRefreshStore(s => s.refresh);
+  const dataRefresh = useDataRefreshStore((s) => s.refresh);
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    refresh();
+    dataRefresh();
     setTimeout(() => setRefreshing(false), 500);
-  }, [refresh]);
+  }, [dataRefresh]);
 
+  const [activeTab, setActiveTab] = useState<MainTab>('budget');
   const [activeRange, setActiveRange] = useState<TimeRange>('1M');
   const [chartWidth, setChartWidth] = useState(320);
   const [exporting, setExporting] = useState(false);
@@ -430,9 +672,7 @@ export default function ReportsScreen() {
     if (exporting) return;
     setExporting(true);
     try {
-      const txsInRange = allTx.filter(
-        (t) => t.created_at >= start && t.created_at <= end
-      );
+      const txsInRange = allTx.filter((t) => t.created_at >= start && t.created_at <= end);
       const exportTxs: ExportTransaction[] = txsInRange.map((t) => ({
         id: t.id,
         flow: t.flow,
@@ -459,7 +699,7 @@ export default function ReportsScreen() {
           percentage: b.percentage,
         })),
       });
-    } catch (err) {
+    } catch {
       Alert.alert('Export Failed', 'Could not generate the report. Please try again.');
     } finally {
       setExporting(false);
@@ -480,149 +720,202 @@ export default function ReportsScreen() {
         <Text style={styles.headerTitle}>Reports</Text>
       </MotiView>
 
+      {/* Tab bar */}
+      <View style={styles.tabBar}>
+        {(['budget', 'analytics', 'trends'] as MainTab[]).map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tabItem, activeTab === tab && styles.tabItemActive]}
+            onPress={() => setActiveTab(tab)}
+            activeOpacity={0.75}
+          >
+            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 110 }]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.brandYellow]} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.brandNavy}
+            colors={[colors.brandNavy]}
+          />
+        }
       >
-        {/* Time filter pills */}
-        <MotiView
-          from={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ type: 'timing', delay: 60, duration: 200 }}
-          style={styles.rangeRow}
-        >
-          {TIME_RANGES.map((r) => (
-            <TouchableOpacity
-              key={r.key}
-              style={[styles.rangePill, activeRange === r.key && styles.rangePillActive]}
-              onPress={() => setActiveRange(r.key)}
-              activeOpacity={0.75}
-            >
-              <Text
-                style={[styles.rangePillText, activeRange === r.key && styles.rangePillTextActive]}
-              >
-                {r.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </MotiView>
+        {/* ── Budget Tab ── */}
+        {activeTab === 'budget' && <BudgetTabContent currency={currency} />}
 
-        {/* Summary cards */}
-        <MotiView
-          from={{ opacity: 0, translateY: 10 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'spring', delay: 80, damping: 22, stiffness: 280 }}
-          style={styles.summaryRow}
-        >
-          <View style={[styles.summaryCard, styles.summaryCardIncome]}>
-            <Text style={styles.summaryCardLabel}>Income</Text>
-            <Text style={[styles.summaryCardValue, { color: colors.income }]}>
-              {currency} {formatAmount(periodTotals.income)}
-            </Text>
-          </View>
-          <View style={[styles.summaryCard, styles.summaryCardExpense]}>
-            <Text style={styles.summaryCardLabel}>Expense</Text>
-            <Text style={[styles.summaryCardValue, { color: colors.expense }]}>
-              {currency} {formatAmount(periodTotals.expense)}
-            </Text>
-          </View>
-        </MotiView>
-
-        {isEmpty ? (
-          /* Empty state */
-          <MotiView
-            from={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ type: 'timing', delay: 140, duration: 240 }}
-            style={styles.emptyWrap}
-          >
-            <View style={styles.emptyIcon}>
-              <Ionicons name="bar-chart-outline" size={36} color={colors.textDisabled} />
-            </View>
-            <Text style={styles.emptyTitle}>No data for {rangeName}</Text>
-            <Text style={styles.emptySubtitle}>
-              Add transactions to see your financial overview here
-            </Text>
-          </MotiView>
-        ) : (
+        {/* ── Analytics Tab ── */}
+        {activeTab === 'analytics' && (
           <>
-            {/* Chart card */}
+            {/* Time filter pills */}
             <MotiView
-              from={{ opacity: 0, translateY: 12 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              transition={{ type: 'spring', delay: 120, damping: 22, stiffness: 260 }}
-              style={styles.chartCard}
+              from={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ type: 'timing', delay: 60, duration: 200 }}
+              style={styles.rangeRow}
             >
-              <View style={styles.chartHeader}>
-                <Text style={styles.chartTitle}>Income vs Expense</Text>
-                <Text style={styles.chartSubtitle}>{rangeName}</Text>
+              {TIME_RANGES.map((r) => (
+                <TouchableOpacity
+                  key={r.key}
+                  style={[styles.rangePill, activeRange === r.key && styles.rangePillActive]}
+                  onPress={() => setActiveRange(r.key)}
+                  activeOpacity={0.75}
+                >
+                  <Text
+                    style={[
+                      styles.rangePillText,
+                      activeRange === r.key && styles.rangePillTextActive,
+                    ]}
+                  >
+                    {r.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </MotiView>
+
+            {/* Summary cards */}
+            <MotiView
+              from={{ opacity: 0, translateY: 10 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{ type: 'spring', delay: 80, damping: 22, stiffness: 280 }}
+              style={styles.summaryRow}
+            >
+              <View style={[styles.summaryCard, styles.summaryCardIncome]}>
+                <Text style={styles.summaryCardLabel}>Income</Text>
+                <Text style={[styles.summaryCardValue, { color: colors.income }]}>
+                  {currency} {formatAmount(periodTotals.income)}
+                </Text>
               </View>
-              <ChartLegend />
-              <View
-                onLayout={(e) => setChartWidth(e.nativeEvent.layout.width)}
-                style={styles.chartArea}
-              >
-                {chartWidth > 0 && <LineChart data={chartData} width={chartWidth} />}
+              <View style={[styles.summaryCard, styles.summaryCardExpense]}>
+                <Text style={styles.summaryCardLabel}>Expense</Text>
+                <Text style={[styles.summaryCardValue, { color: colors.expense }]}>
+                  {currency} {formatAmount(periodTotals.expense)}
+                </Text>
               </View>
             </MotiView>
 
-            {/* Category breakdown */}
-            {breakdown.length > 0 && (
+            {isEmpty ? (
               <MotiView
-                from={{ opacity: 0, translateY: 10 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{ type: 'spring', delay: 180, damping: 22, stiffness: 270 }}
-                style={styles.section}
+                from={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ type: 'timing', delay: 140, duration: 240 }}
+                style={styles.emptyWrap}
               >
-                <Text style={styles.sectionTitle}>Spending by Category</Text>
-                <View style={styles.card}>
-                  {breakdown.slice(0, 8).map((item, i) => (
-                    <View key={item.categoryId}>
-                      {i > 0 && <View style={styles.divider} />}
-                      <CategoryBreakdownRow
-                        name={item.categoryName}
-                        color={item.categoryColor}
-                        amount={item.amount}
-                        percentage={item.percentage}
-                        currency={currency}
-                        index={i}
-                      />
-                    </View>
-                  ))}
+                <View style={styles.emptyIcon}>
+                  <Ionicons name="bar-chart-outline" size={36} color={colors.textDisabled} />
                 </View>
+                <Text style={styles.emptyTitle}>No data for {rangeName}</Text>
+                <Text style={styles.emptySubtitle}>
+                  Add transactions to see your financial overview here
+                </Text>
               </MotiView>
+            ) : (
+              <>
+                {/* Chart card */}
+                <MotiView
+                  from={{ opacity: 0, translateY: 12 }}
+                  animate={{ opacity: 1, translateY: 0 }}
+                  transition={{ type: 'spring', delay: 120, damping: 22, stiffness: 260 }}
+                  style={styles.chartCard}
+                >
+                  <View style={styles.chartHeader}>
+                    <Text style={styles.chartTitle}>Income vs Expense</Text>
+                    <Text style={styles.chartSubtitle}>{rangeName}</Text>
+                  </View>
+                  <ChartLegend />
+                  <View
+                    onLayout={(e) => setChartWidth(e.nativeEvent.layout.width)}
+                    style={styles.chartArea}
+                  >
+                    {chartWidth > 0 && <LineChart data={chartData} width={chartWidth} />}
+                  </View>
+                </MotiView>
+
+                {/* Category breakdown */}
+                {breakdown.length > 0 && (
+                  <MotiView
+                    from={{ opacity: 0, translateY: 10 }}
+                    animate={{ opacity: 1, translateY: 0 }}
+                    transition={{ type: 'spring', delay: 180, damping: 22, stiffness: 270 }}
+                    style={styles.section}
+                  >
+                    <Text style={styles.sectionTitle}>Spending by Category</Text>
+                    <View style={styles.card}>
+                      {breakdown.slice(0, 8).map((item, i) => (
+                        <View key={item.categoryId}>
+                          {i > 0 && <View style={styles.divider} />}
+                          <CategoryBreakdownRow
+                            name={item.categoryName}
+                            color={item.categoryColor}
+                            amount={item.amount}
+                            percentage={item.percentage}
+                            currency={currency}
+                            index={i}
+                          />
+                        </View>
+                      ))}
+                    </View>
+                  </MotiView>
+                )}
+              </>
             )}
+
+            {/* Export button */}
+            <MotiView
+              from={{ opacity: 0, translateY: 8 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{ type: 'spring', delay: 250, damping: 22, stiffness: 280 }}
+              style={styles.exportSection}
+            >
+              <TouchableOpacity
+                style={[styles.exportBtn, exporting && styles.exportBtnDisabled]}
+                onPress={handleExport}
+                activeOpacity={0.85}
+                disabled={exporting}
+              >
+                {exporting ? (
+                  <ActivityIndicator size="small" color={colors.textPrimary} />
+                ) : (
+                  <Ionicons name="document-text-outline" size={18} color={colors.textPrimary} />
+                )}
+                <Text style={styles.exportBtnText}>
+                  {exporting ? 'Generating…' : 'Export PDF Report'}
+                </Text>
+              </TouchableOpacity>
+            </MotiView>
           </>
         )}
 
-        {/* Export button */}
-        <MotiView
-          from={{ opacity: 0, translateY: 8 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'spring', delay: 250, damping: 22, stiffness: 280 }}
-          style={styles.exportSection}
-        >
-          <TouchableOpacity
-            style={[styles.exportBtn, exporting && styles.exportBtnDisabled]}
-            onPress={handleExport}
-            activeOpacity={0.85}
-            disabled={exporting}
+        {/* ── Trends Tab ── */}
+        {activeTab === 'trends' && (
+          <MotiView
+            from={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ type: 'timing', delay: 80, duration: 240 }}
+            style={styles.emptyWrap}
           >
-            {exporting ? (
-              <ActivityIndicator size="small" color={colors.textPrimary} />
-            ) : (
-              <Ionicons name="document-text-outline" size={18} color={colors.textPrimary} />
-            )}
-            <Text style={styles.exportBtnText}>
-              {exporting ? 'Generating…' : 'Export PDF Report'}
+            <View style={styles.emptyIcon}>
+              <Ionicons name="trending-up-outline" size={36} color={colors.textDisabled} />
+            </View>
+            <Text style={styles.emptyTitle}>Trends coming soon</Text>
+            <Text style={styles.emptySubtitle}>
+              Long-term spending patterns and category trends will appear here
             </Text>
-          </TouchableOpacity>
-        </MotiView>
+          </MotiView>
+        )}
       </ScrollView>
     </View>
   );
 }
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: {
@@ -632,18 +925,44 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 16,
     paddingTop: 6,
-    paddingBottom: 10,
+    paddingBottom: 8,
   },
   headerTitle: {
     fontFamily: fonts.sansBold,
     fontSize: 22,
     color: colors.textPrimary,
   },
+  tabBar: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    gap: 6,
+    paddingBottom: 10,
+  },
+  tabItem: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 10,
+    alignItems: 'center',
+    backgroundColor: colors.surfaceCard,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+  },
+  tabItemActive: {
+    backgroundColor: colors.brandNavy,
+    borderColor: colors.brandNavy,
+  },
+  tabText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+  tabTextActive: {
+    color: colors.textInverse,
+  },
   scroll: {
     paddingHorizontal: 16,
     gap: 12,
   },
-  /* Range pills */
   rangeRow: {
     flexDirection: 'row',
     gap: 6,
@@ -665,7 +984,6 @@ const styles = StyleSheet.create({
   rangePillTextActive: {
     color: colors.textInverse,
   },
-  /* Summary cards */
   summaryRow: {
     flexDirection: 'row',
     gap: 10,
@@ -693,7 +1011,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     letterSpacing: -0.3,
   },
-  /* Chart card */
   chartCard: {
     backgroundColor: colors.surfaceCard,
     borderRadius: 18,
@@ -743,7 +1060,6 @@ const styles = StyleSheet.create({
   chartArea: {
     marginTop: 4,
   },
-  /* Section */
   section: {
     gap: 8,
   },
@@ -765,7 +1081,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceBorder,
     marginHorizontal: 14,
   },
-  /* Category row */
   catRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -821,7 +1136,6 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: colors.textDisabled,
   },
-  /* Export */
   exportSection: {},
   exportBtn: {
     backgroundColor: colors.brandYellow,
@@ -840,7 +1154,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.textPrimary,
   },
-  /* Empty state */
   emptyWrap: {
     alignItems: 'center',
     paddingVertical: 48,
@@ -866,5 +1179,155 @@ const styles = StyleSheet.create({
     color: colors.textDisabled,
     textAlign: 'center',
     paddingHorizontal: 32,
+  },
+});
+
+// ─── Budget tab styles ────────────────────────────────────────────────────────
+
+const btStyles = StyleSheet.create({
+  container: {
+    gap: 12,
+  },
+  monthNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+  },
+  monthLabel: {
+    fontFamily: fonts.sansBold,
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  emptyCard: {
+    backgroundColor: colors.surfaceCard,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    borderStyle: 'dashed',
+    padding: 24,
+    alignItems: 'center',
+    gap: 8,
+  },
+  emptyCardTitle: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 14,
+    color: colors.textMuted,
+  },
+  emptyCardSub: {
+    fontFamily: fonts.sans,
+    fontSize: 11,
+    color: colors.textDisabled,
+    textAlign: 'center',
+  },
+  paceStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.pendingBg,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  paceMain: {
+    fontFamily: fonts.sansBold,
+    fontSize: 13,
+    color: colors.pending,
+  },
+  paceSub: {
+    fontFamily: fonts.sans,
+    fontSize: 11,
+    color: colors.pending,
+    opacity: 0.8,
+    marginTop: 1,
+  },
+  paceLink: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 11,
+    color: colors.pending,
+  },
+  section: {
+    gap: 8,
+  },
+  sectionTitle: {
+    fontFamily: fonts.sansBold,
+    fontSize: 13,
+    color: colors.textPrimary,
+    letterSpacing: 0.2,
+  },
+  card: {
+    backgroundColor: colors.surfaceCard,
+    borderRadius: 16,
+    borderWidth: 0.5,
+    borderColor: colors.surfaceBorder,
+    overflow: 'hidden',
+  },
+  divider: {
+    height: 0.5,
+    backgroundColor: colors.surfaceBorder,
+    marginHorizontal: 14,
+  },
+  addCatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    justifyContent: 'center',
+  },
+  addCatText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 13,
+    color: colors.brandViolet,
+  },
+});
+
+// ─── Category picker styles ───────────────────────────────────────────────────
+
+const cpStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(26,16,64,0.4)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: colors.surfaceBg,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    paddingBottom: 36,
+    gap: 12,
+  },
+  handle: {
+    width: 36,
+    height: 4,
+    backgroundColor: colors.textDisabled,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 4,
+  },
+  title: {
+    fontFamily: fonts.sansBold,
+    fontSize: 17,
+    color: colors.textPrimary,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 13,
+    paddingHorizontal: 4,
+    gap: 12,
+    borderRadius: 10,
+  },
+  dot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  name: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 13,
+    color: colors.textPrimary,
+    flex: 1,
   },
 });
