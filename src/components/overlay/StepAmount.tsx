@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   amountInput: {
     flex: 1,
     fontFamily: fonts.mono,
-    fontSize: 36,
+    fontSize: 40,
     letterSpacing: -1,
     padding: 0,
     margin: 0,
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   },
   currencyLabel: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textMuted,
     letterSpacing: 0.5,
     alignSelf: 'flex-end',

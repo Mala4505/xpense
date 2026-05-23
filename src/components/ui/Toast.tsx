@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   },
   checkText: {
     color: colors.textInverse,
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: fonts.sansBold,
   },
   textColumn: {
@@ -82,13 +82,13 @@ const styles = StyleSheet.create({
   },
   message: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textInverse,
     letterSpacing: 0.1,
   },
   subMessage: {
     fontFamily: fonts.sans,
-    fontSize: 11,
+    fontSize: 10,
     color: 'rgba(255,255,255,0.65)',
     marginTop: 1,
   },

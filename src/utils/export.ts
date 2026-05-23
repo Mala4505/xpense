@@ -1,8 +1,27 @@
-import * as FileSystem from 'expo-file-system';
+import { File, Paths } from 'expo-file-system';
+import * as DocumentPicker from 'expo-document-picker';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { format } from 'date-fns';
 import { formatAmount } from './currency';
+
+// ─── Internal helpers ─────────────────────────────────────────────────────────
+
+function writeFile(fileName: string, content: string): File {
+  const file = new File(Paths.cache, fileName);
+  file.write(content);
+  return file;
+}
+
+async function shareFile(file: File, mimeType: string, dialogTitle: string): Promise<void> {
+  const canShare = await Sharing.isAvailableAsync();
+  if (!canShare) {
+    throw new Error('Sharing not available on this device');
+  }
+  await Sharing.shareAsync(file.uri, { mimeType, dialogTitle });
+}
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface ExportTransaction {
   id: string;
@@ -58,22 +77,11 @@ export async function exportTransactionsCSV(transactions: ExportTransaction[]): 
   ].join('\n');
 
   const fileName = `xpense_export_${format(new Date(), 'yyyyMMdd_HHmm')}.csv`;
-  const filePath = `${FileSystem.documentDirectory}${fileName}`;
-
-  await FileSystem.writeAsStringAsync(filePath, csvContent, {
-    encoding: FileSystem.EncodingType.UTF8,
-  });
-
-  const canShare = await Sharing.isAvailableAsync();
-  if (canShare) {
-    await Sharing.shareAsync(filePath, {
-      mimeType: 'text/csv',
-      dialogTitle: 'Export Transactions CSV',
-    });
-  }
+  const file = writeFile(fileName, csvContent);
+  await shareFile(file, 'text/csv', 'Export Transactions CSV');
 }
 
-// ─── HTML Report Export ───────────────────────────────────────────────────────
+// ─── HTML / PDF Report Export ─────────────────────────────────────────────────
 
 function generateHTMLContent(summary: ReportSummary): string {
   const categoryRows = summary.categoryBreakdown
@@ -184,21 +192,9 @@ export async function exportPDFReport(summary: ReportSummary): Promise<void> {
 
 export async function exportHTMLReport(summary: ReportSummary): Promise<void> {
   const html = generateHTMLContent(summary);
-
   const fileName = `xpense_report_${format(new Date(), 'yyyyMMdd_HHmm')}.html`;
-  const filePath = `${FileSystem.documentDirectory}${fileName}`;
-
-  await FileSystem.writeAsStringAsync(filePath, html, {
-    encoding: FileSystem.EncodingType.UTF8,
-  });
-
-  const canShare = await Sharing.isAvailableAsync();
-  if (canShare) {
-    await Sharing.shareAsync(filePath, {
-      mimeType: 'text/html',
-      dialogTitle: 'Export Report',
-    });
-  }
+  const file = writeFile(fileName, html);
+  await shareFile(file, 'text/html', 'Export Report');
 }
 
 // ─── Backup / Restore ─────────────────────────────────────────────────────────
@@ -216,20 +212,26 @@ export async function exportBackupJSON(transactions: ExportTransaction[]): Promi
     transactions,
   };
 
+  const jsonContent = JSON.stringify(backup, null, 2);
   const fileName = `xpense_backup_${format(new Date(), 'yyyyMMdd_HHmm')}.json`;
-  const filePath = `${FileSystem.documentDirectory}${fileName}`;
+  const file = writeFile(fileName, jsonContent);
+  await shareFile(file, 'application/json', 'Backup Xpense Data');
+}
 
-  await FileSystem.writeAsStringAsync(filePath, JSON.stringify(backup, null, 2), {
-    encoding: FileSystem.EncodingType.UTF8,
+export async function readBackupFile(): Promise<BackupData> {
+  const result = await DocumentPicker.getDocumentAsync({
+    type: 'application/json',
+    copyToCacheDirectory: true,
   });
-
-  const canShare = await Sharing.isAvailableAsync();
-  if (canShare) {
-    await Sharing.shareAsync(filePath, {
-      mimeType: 'application/json',
-      dialogTitle: 'Backup Xpense Data',
-    });
+  if (result.canceled || !result.assets?.[0]) {
+    throw new Error('cancelled');
   }
+  const content = await new File(result.assets[0].uri).text();
+  const data = JSON.parse(content) as BackupData;
+  if (typeof data.version !== 'number' || !Array.isArray(data.transactions)) {
+    throw new Error('invalid');
+  }
+  return data;
 }
 
 function escapeHTML(str: string): string {

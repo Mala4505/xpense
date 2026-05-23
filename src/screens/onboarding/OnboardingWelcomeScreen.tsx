@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   },
   growthAmount: {
     fontFamily: fonts.mono,
-    fontSize: 16,
+    fontSize: 17,
     color: colors.brandNavy,
     fontWeight: '700',
   },
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontFamily: fonts.sans,
-    fontSize: 16,
+    fontSize: 17,
     color: '#484550',
     lineHeight: 24,
     textAlign: 'center',
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     fontFamily: fonts.sansBold,
-    fontSize: 16,
+    fontSize: 17,
     color: colors.brandNavy,
   },
 });

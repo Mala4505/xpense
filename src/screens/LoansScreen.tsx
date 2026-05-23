@@ -283,9 +283,16 @@ export default function LoansScreen() {
             transition={{ type: 'timing', delay: 150, duration: 250 }}
             style={loanStyles.emptyWrap}
           >
-            <Ionicons name="link-outline" size={36} color={colors.textDisabled} />
-            <Text style={loanStyles.emptyText}>
+            <View style={loanStyles.emptyIconWrap}>
+              <Ionicons name="link-outline" size={32} color={colors.textDisabled} />
+            </View>
+            <Text style={loanStyles.emptyTitle}>
               {activeTab === 'lent' ? 'No loans given yet' : 'No borrowed loans yet'}
+            </Text>
+            <Text style={loanStyles.emptySubtitle}>
+              {activeTab === 'lent'
+                ? 'Add a loan transaction to start tracking'
+                : 'Borrowed amounts will appear here'}
             </Text>
           </MotiView>
         ) : (
@@ -345,14 +352,14 @@ const loanStyles = StyleSheet.create({
     gap: 4,
   },
   summaryLabel: {
-    fontFamily: fonts.sans,
+    fontFamily: fonts.sansMedium,
     fontSize: 10,
     color: colors.textMuted,
     textAlign: 'center',
   },
   summaryValue: {
     fontFamily: fonts.mono,
-    fontSize: 13,
+    fontSize: 14,
     letterSpacing: -0.2,
   },
   summaryDivider: {
@@ -384,7 +391,7 @@ const loanStyles = StyleSheet.create({
   },
   tabText: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textMuted,
   },
   tabTextActive: {
@@ -396,13 +403,29 @@ const loanStyles = StyleSheet.create({
   },
   emptyWrap: {
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     paddingVertical: 40,
   },
-  emptyText: {
+  emptyIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.surfaceElevated,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  emptyTitle: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 14,
+    color: colors.textMuted,
+  },
+  emptySubtitle: {
     fontFamily: fonts.sans,
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textDisabled,
+    textAlign: 'center',
+    paddingHorizontal: 32,
   },
   /* Loan card */
   card: {
@@ -438,7 +461,7 @@ const loanStyles = StyleSheet.create({
   },
   personInitialText: {
     fontFamily: fonts.sansBold,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.loan,
   },
   cardMeta: {
@@ -478,7 +501,7 @@ const loanStyles = StyleSheet.create({
     gap: 3,
   },
   amountLabel: {
-    fontFamily: fonts.sans,
+    fontFamily: fonts.sansMedium,
     fontSize: 9,
     color: colors.textMuted,
     letterSpacing: 0.3,

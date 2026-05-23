@@ -1008,12 +1008,12 @@ const styles = StyleSheet.create({
   },
   summaryCardValue: {
     fontFamily: fonts.mono,
-    fontSize: 15,
+    fontSize: 14,
     letterSpacing: -0.3,
   },
   chartCard: {
     backgroundColor: colors.surfaceCard,
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 0.5,
     borderColor: colors.surfaceBorder,
     paddingTop: 16,
@@ -1028,7 +1028,7 @@ const styles = StyleSheet.create({
   },
   chartTitle: {
     fontFamily: fonts.sansBold,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
   },
   chartSubtitle: {
@@ -1065,7 +1065,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontFamily: fonts.sansBold,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
     letterSpacing: 0.2,
   },
@@ -1133,7 +1133,7 @@ const styles = StyleSheet.create({
   },
   catPct: {
     fontFamily: fonts.sans,
-    fontSize: 9,
+    fontSize: 10,
     color: colors.textDisabled,
   },
   exportSection: {},
@@ -1151,7 +1151,7 @@ const styles = StyleSheet.create({
   },
   exportBtnText: {
     fontFamily: fonts.sansBold,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textPrimary,
   },
   emptyWrap: {
@@ -1170,7 +1170,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontFamily: fonts.sansMedium,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textMuted,
   },
   emptySubtitle: {
@@ -1201,7 +1201,7 @@ const btStyles = StyleSheet.create({
   },
   emptyCard: {
     backgroundColor: colors.surfaceCard,
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
     borderStyle: 'dashed',
@@ -1216,7 +1216,7 @@ const btStyles = StyleSheet.create({
   },
   emptyCardSub: {
     fontFamily: fonts.sans,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textDisabled,
     textAlign: 'center',
   },
@@ -1231,19 +1231,19 @@ const btStyles = StyleSheet.create({
   },
   paceMain: {
     fontFamily: fonts.sansBold,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.pending,
   },
   paceSub: {
     fontFamily: fonts.sans,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.pending,
     opacity: 0.8,
     marginTop: 1,
   },
   paceLink: {
     fontFamily: fonts.sansMedium,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.pending,
   },
   section: {
@@ -1251,7 +1251,7 @@ const btStyles = StyleSheet.create({
   },
   sectionTitle: {
     fontFamily: fonts.sansBold,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
     letterSpacing: 0.2,
   },
@@ -1277,7 +1277,7 @@ const btStyles = StyleSheet.create({
   },
   addCatText: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.brandViolet,
   },
 });
@@ -1326,7 +1326,7 @@ const cpStyles = StyleSheet.create({
   },
   name: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
     flex: 1,
   },

@@ -349,7 +349,7 @@ const pendingStyles = StyleSheet.create({
   },
   headerTitle: {
     fontFamily: fonts.sansBold,
-    fontSize: 18,
+    fontSize: 17,
     color: colors.textPrimary,
   },
   scrollContent: {
@@ -387,7 +387,7 @@ const pendingStyles = StyleSheet.create({
   },
   countText: {
     fontFamily: fonts.sansMedium,
-    fontSize: 11,
+    fontSize: 10,
   },
   sectionTotal: {
     fontFamily: fonts.mono,
@@ -419,7 +419,7 @@ const pendingStyles = StyleSheet.create({
   },
   cardName: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
   },
   cardDate: {
@@ -439,7 +439,7 @@ const pendingStyles = StyleSheet.create({
   },
   cardTotal: {
     fontFamily: fonts.mono,
-    fontSize: 13,
+    fontSize: 14,
     letterSpacing: -0.2,
   },
   cardOutstanding: {
@@ -449,7 +449,7 @@ const pendingStyles = StyleSheet.create({
   },
   note: {
     fontFamily: fonts.sans,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textMuted,
     fontStyle: 'italic',
     paddingLeft: 46,
@@ -480,7 +480,7 @@ const pendingStyles = StyleSheet.create({
   },
   markBtnText: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textInverse,
   },
   /* Empty state */
@@ -502,12 +502,12 @@ const pendingStyles = StyleSheet.create({
   },
   emptyTitle: {
     fontFamily: fonts.sansBold,
-    fontSize: 18,
+    fontSize: 17,
     color: colors.income,
   },
   emptySubtitle: {
     fontFamily: fonts.sans,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textDisabled,
   },
 });

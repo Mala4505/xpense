@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
   noteInput: {
     minHeight: 64,
     fontFamily: fonts.sans,
-    fontSize: 16,
+    fontSize: 17,
     color: colors.textPrimary,
     lineHeight: 24,
     padding: 0,

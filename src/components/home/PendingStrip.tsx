@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
   },
   viewBtnText: {
     fontFamily: fonts.sansMedium,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.pending,
   },
 });

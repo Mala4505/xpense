@@ -5,6 +5,7 @@ export type OverlayStep = 'amount' | 'category' | 'note';
 interface OverlayState {
   isOpen: boolean;
   step: OverlayStep;
+  isOverlayActivity: boolean;
 
   // Step 1: Amount
   flow: 'IN' | 'OUT';
@@ -25,6 +26,7 @@ interface OverlayStore extends OverlayState {
   openWithPreset: (categoryId: string, flow: 'IN' | 'OUT') => void;
   closeOverlay: () => void;
   resetOverlay: () => void;
+  setOverlayActivityMode: (v: boolean) => void;
 
   // Amount step
   setFlow: (flow: 'IN' | 'OUT') => void;
@@ -45,6 +47,7 @@ interface OverlayStore extends OverlayState {
 const initialState: OverlayState = {
   isOpen: false,
   step: 'amount',
+  isOverlayActivity: false,
   flow: 'OUT',
   amount: '',
   note: '',
@@ -69,6 +72,8 @@ export const useOverlayStore = create<OverlayStore>((set, get) => ({
   resetOverlay: () => {
     set(initialState);
   },
+
+  setOverlayActivityMode: (v) => set({ isOverlayActivity: v }),
 
   setFlow: (flow) => set({ flow }),
   setAmount: (amount) => set({ amount }),

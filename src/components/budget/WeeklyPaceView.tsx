@@ -243,7 +243,7 @@ const wStyles = StyleSheet.create({
   },
   backText: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.brandViolet,
   },
   projCard: {
@@ -254,16 +254,16 @@ const wStyles = StyleSheet.create({
   },
   projStatus: {
     fontFamily: fonts.sansBold,
-    fontSize: 13,
+    fontSize: 14,
   },
   projMain: {
     fontFamily: fonts.sansMedium,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textPrimary,
   },
   projSub: {
     fontFamily: fonts.sans,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textMuted,
   },
   barsCard: {
@@ -277,7 +277,7 @@ const wStyles = StyleSheet.create({
   },
   barsTitle: {
     fontFamily: fonts.sansBold,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
   },
   weekRow: {
@@ -290,7 +290,7 @@ const wStyles = StyleSheet.create({
   },
   weekLabel: {
     fontFamily: fonts.sansMedium,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textMuted,
     flex: 1,
   },
@@ -302,7 +302,7 @@ const wStyles = StyleSheet.create({
   },
   nowBadgeText: {
     fontFamily: fonts.sansBold,
-    fontSize: 9,
+    fontSize: 10,
     color: colors.pending,
   },
   projBadge: {
@@ -313,7 +313,7 @@ const wStyles = StyleSheet.create({
   },
   projBadgeText: {
     fontFamily: fonts.sans,
-    fontSize: 9,
+    fontSize: 10,
     color: colors.textDisabled,
   },
   barTrack: {
@@ -342,7 +342,7 @@ const wStyles = StyleSheet.create({
   },
   weekAmt: {
     fontFamily: fonts.mono,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textPrimary,
     letterSpacing: -0.2,
   },

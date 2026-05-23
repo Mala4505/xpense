@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, View, GestureResponderEvent } from 'react-native';
+import { Platform, StyleSheet, TouchableOpacity, View, GestureResponderEvent } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/fonts';
+import { springs } from '../theme/springs';
 import { useAddSheetStore } from '../stores/addSheetStore';
 import { AddSheet } from '../components/AddSheet';
 import HomeScreen from '../screens/HomeScreen';
@@ -16,22 +17,36 @@ const Tab = createBottomTabNavigator();
 
 function FABButton({ onPress }: { onPress?: (e: GestureResponderEvent) => void }) {
   const [pressed, setPressed] = useState(false);
+  const isOpen = useAddSheetStore((s) => s.isOpen);
+
+  function handlePress() {
+    if (isOpen) {
+      useAddSheetStore.getState().closeSheet();
+    } else {
+      useAddSheetStore.getState().openSheet();
+    }
+  }
 
   return (
     <View style={styles.fabContainer} pointerEvents="box-none">
       <MotiView
         animate={{ scale: pressed ? 0.88 : 1 }}
-        transition={{ type: 'spring', damping: 18, stiffness: 320 }}
+        transition={springs.snappy}
       >
         <TouchableOpacity
           style={styles.fab}
-          onPress={() => useAddSheetStore.getState().openSheet()}
+          onPress={handlePress}
           onPressIn={() => setPressed(true)}
           onPressOut={() => setPressed(false)}
           activeOpacity={1}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Ionicons name="add" size={28} color={colors.brandNavy} />
+          <MotiView
+            animate={{ rotate: isOpen ? '45deg' : '0deg' }}
+            transition={springs.snappy}
+          >
+            <Ionicons name="add" size={29} color={colors.brandNavy} />
+          </MotiView>
         </TouchableOpacity>
       </MotiView>
     </View>
@@ -116,16 +131,16 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: colors.surfaceBorder,
     height: 70,
-    paddingBottom: 20,
+    paddingBottom: Platform.select({ ios: 20, android: 8 }),
     paddingTop: 2,
   },
   tabBarLabel: {
     fontFamily: fonts.sansMedium,
-    fontSize: 11,
+    fontSize: 10,
   },
   fabContainer: {
     position: 'absolute',
-    bottom: 10,
+    bottom: 25,
     alignSelf: 'center',
     width: 60,
     height: 60,
@@ -133,9 +148,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   fab: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 57,
+    height: 57,
+    borderRadius: 30,
     backgroundColor: colors.brandYellow,
     justifyContent: 'center',
     alignItems: 'center',

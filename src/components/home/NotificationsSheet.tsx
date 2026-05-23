@@ -80,8 +80,11 @@ export function NotificationsSheet({ visible, onClose }: Props) {
           {/* List */}
           {notifications.length === 0 ? (
             <View style={styles.emptyWrap}>
-              <Ionicons name="notifications-off-outline" size={40} color={colors.textDisabled} />
-              <Text style={styles.emptyText}>No notifications yet</Text>
+              <View style={styles.emptyIconWrap}>
+                <Ionicons name="notifications-off-outline" size={32} color={colors.textDisabled} />
+              </View>
+              <Text style={styles.emptyTitle}>No notifications yet</Text>
+              <Text style={styles.emptySubtitle}>Transaction and khumus alerts will appear here</Text>
             </View>
           ) : (
             <ScrollView
@@ -144,7 +147,7 @@ const styles = StyleSheet.create({
   },
   clearText: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.expense,
   },
   list: {
@@ -174,7 +177,7 @@ const styles = StyleSheet.create({
   },
   itemTitle: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
   },
   itemText: {
@@ -184,17 +187,33 @@ const styles = StyleSheet.create({
   },
   itemTime: {
     fontFamily: fonts.sans,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textDisabled,
   },
   emptyWrap: {
     alignItems: 'center',
-    paddingVertical: 52,
-    gap: 10,
+    paddingVertical: 40,
+    gap: 8,
   },
-  emptyText: {
-    fontFamily: fonts.sans,
+  emptyIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.surfaceElevated,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  emptyTitle: {
+    fontFamily: fonts.sansMedium,
     fontSize: 14,
+    color: colors.textMuted,
+  },
+  emptySubtitle: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
     color: colors.textDisabled,
+    textAlign: 'center',
+    paddingHorizontal: 32,
   },
 });

@@ -41,3 +41,8 @@ patchCMakeFile(path.join(nm, 'expo-sqlite', 'android', 'CMakeLists.txt'), 'expo-
 patchCMakeFile(path.join(nm, 'react-native-screens', 'android', 'src', 'main', 'jni', 'CMakeLists.txt'), 'react-native-screens (jni codegen)');
 patchCMakeFile(path.join(nm, 'react-native-safe-area-context', 'android', 'src', 'main', 'jni', 'CMakeLists.txt'), 'react-native-safe-area-context (jni codegen)');
 patchCMakeFile(path.join(nm, 'react-native-svg', 'android', 'src', 'main', 'jni', 'CMakeLists.txt'), 'react-native-svg (jni codegen)');
+
+// expo-modules-core relies on NDK toolchain to auto-inject c++_shared linkage, which
+// breaks on NDK 27 + CMake 3.22.x on Windows. Add it explicitly.
+patchCMakeFile(path.join(nm, 'expo-modules-core', 'android', 'cmake', 'common.cmake'), 'expo-modules-core (common.cmake)');
+patchCMakeFile(path.join(nm, 'expo-modules-core', 'android', 'cmake', 'main.cmake'), 'expo-modules-core (main.cmake)');

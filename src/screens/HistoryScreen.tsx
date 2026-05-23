@@ -15,6 +15,7 @@ import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/fonts';
+import { springs } from '../theme/springs';
 import { TransactionRow } from '../components/ui/TransactionRow';
 import { useAllTransactions, RawTransaction } from '../hooks/useTransactions';
 import { useCategoriesMap } from '../hooks/useCategories';
@@ -39,13 +40,18 @@ function FilterChip({
   onPress: () => void;
 }) {
   return (
-    <TouchableOpacity
-      style={[styles.chip, active && styles.chipActive]}
-      onPress={onPress}
-      activeOpacity={0.75}
+    <MotiView
+      animate={{ scale: active ? 1 : 0.95, opacity: active ? 1 : 0.75 }}
+      transition={springs.snappy}
     >
-      <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
-    </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.chip, active && styles.chipActive]}
+        onPress={onPress}
+        activeOpacity={0.75}
+      >
+        <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
+      </TouchableOpacity>
+    </MotiView>
   );
 }
 
@@ -257,7 +263,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontFamily: fonts.sans,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
     padding: 0,
     margin: 0,
@@ -297,7 +303,7 @@ const styles = StyleSheet.create({
   },
   sectionHeaderText: {
     fontFamily: fonts.sansMedium,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textMuted,
     letterSpacing: 0.4,
   },
@@ -329,7 +335,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontFamily: fonts.sansMedium,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textMuted,
   },
   emptySubtitle: {

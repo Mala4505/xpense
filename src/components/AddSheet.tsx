@@ -12,6 +12,8 @@ import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
+import { MotiView } from 'moti';
+import { springs } from '../theme/springs';
 // import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { addDays, subDays } from 'date-fns';
@@ -53,6 +55,7 @@ export function AddSheet() {
   const { editTransactionId, closeSheet, isOpen } = useAddSheetStore();
 
   const currency = useSettingsStore((s) => s.defaultCurrency);
+  const pinnedCategoryNames = useSettingsStore((s) => s.pinnedCategoryNames);
   const showToast = useToastStore((s) => s.showToast);
 
   const amountInputRef = useRef<TextInput>(null);
@@ -66,6 +69,7 @@ export function AddSheet() {
   const [personName, setPersonName] = useState('');
   const [saving, setSaving] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [toggleWidth, setToggleWidth] = useState(0);
 
   const selectedCategory = useMemo(
     () => categories.find((c) => c.id === selectedCategoryId) ?? null,
@@ -109,7 +113,7 @@ export function AddSheet() {
     if (!isOpen) return;
 
     db.getAllAsync<RawCategory>('SELECT * FROM categories ORDER BY sort_order ASC').then(
-      setCategories
+      (cats) => setCategories(cats.filter((c) => c.is_loan_type === 1 || pinnedCategoryNames.includes(c.name)))
     );
 
     if (editTransactionId) {
@@ -260,7 +264,7 @@ export function AddSheet() {
       enablePanDownToClose
       onClose={closeSheet}
       backdropComponent={renderBackdrop}
-      handleIndicatorStyle={{ backgroundColor: colors.surfaceBorder }}
+      handleIndicatorStyle={{ backgroundColor: colors.surfaceBorder, width: 40, height: 5, borderRadius: 3 }}
       backgroundStyle={{ backgroundColor: colors.surfaceCard }}
       keyboardBehavior="extend"
       keyboardBlurBehavior="restore"
@@ -284,13 +288,25 @@ export function AddSheet() {
         </View>
 
         {/* ── Flow toggle ── */}
-        <View style={styles.flowToggle}>
-          <TouchableOpacity
+        <View
+          style={styles.flowToggle}
+          onLayout={e => setToggleWidth(e.nativeEvent.layout.width)}
+        >
+          <MotiView
+            animate={{
+              translateX: flow === 'OUT' ? 0 : toggleWidth / 2,
+            }}
+            transition={springs.snappy}
             style={[
-              styles.flowBtn,
-              flow === 'OUT' && styles.flowBtnExpenseActive,
-              isLoanCategory && styles.flowBtnLocked,
+              styles.flowSlider,
+              {
+                width: toggleWidth / 2,
+                backgroundColor: flow === 'OUT' ? colors.expenseBg : colors.incomeBg,
+              },
             ]}
+          />
+          <TouchableOpacity
+            style={[styles.flowBtn, isLoanCategory && styles.flowBtnLocked]}
             onPress={() => handleFlowChange('OUT')}
             activeOpacity={0.8}
           >
@@ -299,11 +315,7 @@ export function AddSheet() {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[
-              styles.flowBtn,
-              flow === 'IN' && styles.flowBtnIncomeActive,
-              isLoanCategory && styles.flowBtnLocked,
-            ]}
+            style={[styles.flowBtn, isLoanCategory && styles.flowBtnLocked]}
             onPress={() => handleFlowChange('IN')}
             activeOpacity={0.8}
           >
@@ -465,7 +477,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: fonts.sansBold,
-    fontSize: 16,
+    fontSize: 17,
     color: colors.textPrimary,
   },
   /* Flow toggle */
@@ -475,25 +487,26 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
+    backgroundColor: colors.surfaceElevated,
+  },
+  flowSlider: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    borderRadius: 12,
   },
   flowBtn: {
     flex: 1,
     paddingVertical: 11,
     alignItems: 'center',
-    backgroundColor: colors.surfaceElevated,
-  },
-  flowBtnExpenseActive: {
-    backgroundColor: colors.expenseBg,
-  },
-  flowBtnIncomeActive: {
-    backgroundColor: colors.incomeBg,
   },
   flowBtnLocked: {
     opacity: 0.5,
   },
   flowBtnText: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textMuted,
   },
   flowBtnTextExpense: {
@@ -516,7 +529,7 @@ const styles = StyleSheet.create({
   },
   toggleSign: {
     fontFamily: fonts.sansBold,
-    fontSize: 24,
+    fontSize: 22,
     color: colors.textMuted,
     width: 24,
     textAlign: 'center',
@@ -524,7 +537,7 @@ const styles = StyleSheet.create({
   amountInput: {
     flex: 1,
     fontFamily: fonts.mono,
-    fontSize: 36,
+    fontSize: 40,
     letterSpacing: -1,
     padding: 0,
     margin: 0,
@@ -540,7 +553,7 @@ const styles = StyleSheet.create({
   /* Section label */
   sectionLabel: {
     fontFamily: fonts.sansMedium,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textMuted,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
@@ -590,7 +603,7 @@ const styles = StyleSheet.create({
   },
   inputText: {
     fontFamily: fonts.sans,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
     flex: 1,
     padding: 0,
@@ -636,7 +649,7 @@ const styles = StyleSheet.create({
   },
   saveBtnText: {
     fontFamily: fonts.sansBold,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.brandYellow,
     letterSpacing: 0.2,
   },
@@ -690,7 +703,7 @@ const styles = StyleSheet.create({
 
   datePickerText: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
   },
 });

@@ -6,6 +6,7 @@ import KhumusScreen from '../screens/KhumusScreen';
 import LoansScreen from '../screens/LoansScreen';
 import PendingScreen from '../screens/PendingScreen';
 import AddScreen from '../screens/AddScreen';
+import CategoryManagementScreen from '../screens/CategoryManagementScreen';
 import OnboardingWelcomeScreen from '../screens/onboarding/OnboardingWelcomeScreen';
 import OnboardingIdentityScreen from '../screens/onboarding/OnboardingIdentityScreen';
 import OnboardingBackTapScreen from '../screens/onboarding/OnboardingBackTapScreen';
@@ -28,6 +29,7 @@ export type RootStackParamList = {
   Khumus: undefined;
   Loans: undefined;
   Pending: undefined;
+  CategoryManagement: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -54,10 +56,10 @@ export default function RootNavigator() {
             component={OnboardingWelcomeScreen}
             options={{ animation: 'fade' }}
           />
-          <Stack.Screen name="OnboardingIdentity" component={OnboardingIdentityScreen} />
-          <Stack.Screen name="OnboardingBackTap" component={OnboardingBackTapScreen} />
-          <Stack.Screen name="OnboardingNotifications" component={OnboardingNotificationsScreen} />
-          <Stack.Screen name="OnboardingCategorySetup" component={OnboardingCategorySetupScreen} />
+          <Stack.Screen name="OnboardingIdentity" component={OnboardingIdentityScreen} options={{ animation: 'fade' }} />
+          <Stack.Screen name="OnboardingBackTap" component={OnboardingBackTapScreen} options={{ animation: 'fade' }} />
+          <Stack.Screen name="OnboardingNotifications" component={OnboardingNotificationsScreen} options={{ animation: 'fade' }} />
+          <Stack.Screen name="OnboardingCategorySetup" component={OnboardingCategorySetupScreen} options={{ animation: 'fade' }} />
           <Stack.Screen
             name="OnboardingLaunchpad"
             component={OnboardingLaunchpadScreen}
@@ -78,16 +80,21 @@ export default function RootNavigator() {
           <Stack.Screen
             name="Khumus"
             component={KhumusScreen}
-            options={{ animation: 'slide_from_right' }}
+            options={{ animation: 'fade', animationTypeForReplace: 'pop' }}
           />
           <Stack.Screen
             name="Loans"
             component={LoansScreen}
-            options={{ animation: 'slide_from_right' }}
+            options={{ animation: 'fade', animationTypeForReplace: 'pop' }}
           />
           <Stack.Screen
             name="Pending"
             component={PendingScreen}
+            options={{ animation: 'fade', animationTypeForReplace: 'pop' }}
+          />
+          <Stack.Screen
+            name="CategoryManagement"
+            component={CategoryManagementScreen}
             options={{ animation: 'slide_from_right' }}
           />
         </>

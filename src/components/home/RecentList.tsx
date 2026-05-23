@@ -80,7 +80,7 @@ export function RecentList({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surfaceCard,
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 0.5,
     borderColor: colors.surfaceBorder,
     marginTop: 12,
@@ -126,12 +126,12 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textMuted,
   },
   emptySubtitle: {
     fontFamily: fonts.sans,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textDisabled,
   },
 });

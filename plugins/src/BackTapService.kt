@@ -1,5 +1,6 @@
 package com.mala455.Xpense
 
+import android.app.ActivityManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
@@ -9,9 +10,9 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import android.net.Uri
 import android.os.Build
 import android.os.IBinder
+import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import kotlin.math.sqrt
 
@@ -24,14 +25,10 @@ class BackTapService : Service(), SensorEventListener {
     private var lastTrigger = 0L
     private var lastTapTime = 0L
     private var wasAbove = false
-    private var wasQuiet = true
-    private var lastWentQuiet = 0L
 
     private val THRESHOLD = 1.5f
     private val TAP_WINDOW_MS = 400L
     private val MIN_TAP_GAP_MS = 150L
-    private val QUIET_FLOOR = 1.1f
-    private val MIN_QUIET_MS = 80L
     private val COOLDOWN_MS = 1500L
 
     companion object {
@@ -44,15 +41,15 @@ class BackTapService : Service(), SensorEventListener {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         createNotificationChannel()
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Xpense running")
-            .setSmallIcon(android.R.drawable.ic_menu_recent_history)
+            .setContentTitle("Xpense is active")
+            .setSmallIcon(R.drawable.ic_qs_tile)
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .setOngoing(true)
             .build()
         startForeground(NOTIF_ID, notification)
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
         accelerometer?.let {
             sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME)
         }
@@ -73,19 +70,10 @@ class BackTapService : Service(), SensorEventListener {
         val now = System.currentTimeMillis()
         val isAbove = magnitude > THRESHOLD
 
-        if (magnitude < QUIET_FLOOR) {
-            if (!wasQuiet) {
-                wasQuiet = true
-                lastWentQuiet = now
-            }
-        }
-
         if (isAbove && !wasAbove) {
             wasAbove = true
-            val quietLongEnough = wasQuiet && (now - lastWentQuiet >= MIN_QUIET_MS)
-            if (quietLongEnough && now - lastTapTime >= MIN_TAP_GAP_MS) {
+            if (now - lastTapTime >= MIN_TAP_GAP_MS) {
                 lastTapTime = now
-                wasQuiet = false
                 taps.removeAll { now - it >= TAP_WINDOW_MS }
                 taps.add(now)
 
@@ -103,9 +91,23 @@ class BackTapService : Service(), SensorEventListener {
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 
     private fun fireOverlayIntent() {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("xpense://overlay"))
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+            return
+        }
+        if (isAppInForeground()) return
+
+        val intent = Intent(this, OverlayActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         startActivity(intent)
+    }
+
+    private fun isAppInForeground(): Boolean {
+        val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        // IMPORTANCE_FOREGROUND (100) = activity in foreground; excludes foreground services (125)
+        return am.runningAppProcesses?.any {
+            it.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND &&
+            it.processName == packageName
+        } ?: false
     }
 
     private fun createNotificationChannel() {

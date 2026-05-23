@@ -47,7 +47,7 @@ export function StatusBadge({ status, flow, style }: StatusBadgeProps) {
       <Text
         style={{
           fontFamily: fonts.sansMedium,
-          fontSize: 9,
+          fontSize: 10,
           color: cfg.text,
           letterSpacing: 0.3,
         }}

@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
-  Dimensions,
+  AppState,
   KeyboardAvoidingView,
   Modal,
+  NativeModules,
   PanResponder,
   Platform,
   RefreshControl,
@@ -22,17 +23,18 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/RootNavigator';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/fonts';
 import { CURRENCY_LIST } from '../utils/currency';
-import { useCategories, useCategoriesMap, RawCategory } from '../hooks/useCategories';
+import { useCategoriesMap } from '../hooks/useCategories';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useAllTransactions } from '../hooks/useTransactions';
 import { useSQLiteContext } from 'expo-sqlite';
-import { createCategory, updateCategory, deleteCategory } from '../queries/categories';
-import { exportTransactionsCSV, ExportTransaction } from '../utils/export';
+import { exportTransactionsCSV, exportBackupJSON, readBackupFile, ExportTransaction } from '../utils/export';
 import { useDataRefreshStore } from '../stores/dataRefreshStore';
-import { FlowType } from '../types';
 
 // ─── Section header ───────────────────────────────────────────────────────────
 
@@ -82,211 +84,6 @@ function SettingsRow({
       {right ?? (
         onPress ? <Ionicons name="chevron-forward" size={14} color={colors.textDisabled} /> : null
       )}
-    </TouchableOpacity>
-  );
-}
-
-// ─── Add Category Modal ───────────────────────────────────────────────────────
-
-const PRESET_COLORS = [
-  '#22C87A', '#4ADE80', '#A78BFA', '#38BDF8', '#FB923C',
-  '#FBBF24', '#F87171', '#F472B6', '#34D399', '#60A5FA',
-  '#E05C5C', '#9B6EF0', '#C48A00', '#F0B429', '#94A3B8',
-];
-
-function AddCategoryModal({
-  visible,
-  onClose,
-  onCreated,
-  editCategory,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  onCreated: () => void;
-  editCategory?: RawCategory;
-}) {
-  const db = useSQLiteContext();
-  const [name, setName] = useState('');
-  const [flowType, setFlowType] = useState<FlowType>('OUT');
-  const [khumusEligible, setKhumusEligible] = useState(false);
-  const [selectedColor, setSelectedColor] = useState(PRESET_COLORS[0]);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (visible) {
-      if (editCategory) {
-        setName(editCategory.name);
-        setFlowType(editCategory.flow_type);
-        setKhumusEligible(!!editCategory.khumus_eligible);
-        setSelectedColor(editCategory.color);
-      } else {
-        setName('');
-        setFlowType('OUT');
-        setKhumusEligible(false);
-        setSelectedColor(PRESET_COLORS[0]);
-      }
-    }
-  }, [visible, editCategory]);
-
-  async function handleSave() {
-    if (!name.trim() || saving) return;
-    setSaving(true);
-    try {
-      if (editCategory) {
-        await updateCategory(db, editCategory.id, {
-          name: name.trim(),
-          flow_type: flowType,
-          khumus_eligible: khumusEligible && flowType !== 'OUT',
-          color: selectedColor,
-          icon: editCategory.icon,
-        });
-      } else {
-        await createCategory(db, {
-          name: name.trim(),
-          flow_type: flowType,
-          khumus_eligible: khumusEligible && flowType !== 'OUT',
-          color: selectedColor,
-          icon: 'circle',
-        });
-      }
-      onCreated();
-      onClose();
-    } catch {
-      Alert.alert('Error', editCategory ? 'Could not update category.' : 'Could not create category.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={addCatStyles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <TouchableOpacity style={{ flex: 1 }} onPress={onClose} />
-        <MotiView
-          from={{ translateY: 60, opacity: 0 }}
-          animate={{ translateY: 0, opacity: 1 }}
-          exit={{ translateY: 60, opacity: 0 }}
-          transition={{ type: 'spring', damping: 26, stiffness: 300 }}
-          style={addCatStyles.sheet}
-        >
-          <View style={addCatStyles.handle} />
-          <Text style={addCatStyles.title}>{editCategory ? 'Edit Category' : 'New Category'}</Text>
-
-          <Text style={addCatStyles.fieldLabel}>Name</Text>
-          <TextInput
-            style={addCatStyles.input}
-            placeholder="Category name"
-            placeholderTextColor={colors.textDisabled}
-            value={name}
-            onChangeText={setName}
-            autoCapitalize="words"
-            autoFocus
-          />
-
-          <Text style={addCatStyles.fieldLabel}>Direction</Text>
-          <View style={addCatStyles.dirRow}>
-            {(['IN', 'OUT', 'BOTH'] as FlowType[]).map((f) => (
-              <TouchableOpacity
-                key={f}
-                style={[addCatStyles.dirChip, flowType === f && addCatStyles.dirChipActive]}
-                onPress={() => setFlowType(f)}
-                activeOpacity={0.75}
-              >
-                <Text
-                  style={[
-                    addCatStyles.dirChipText,
-                    flowType === f && addCatStyles.dirChipTextActive,
-                  ]}
-                >
-                  {f === 'IN' ? 'Income' : f === 'OUT' ? 'Expense' : 'Both'}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {flowType !== 'OUT' && (
-            <View style={addCatStyles.toggleRow}>
-              <Text style={addCatStyles.toggleLabel}>Khumus eligible</Text>
-              <Switch
-                value={khumusEligible}
-                onValueChange={setKhumusEligible}
-                trackColor={{ false: colors.surfaceBorder, true: colors.khumus + '66' }}
-                thumbColor={khumusEligible ? colors.khumus : colors.textDisabled}
-              />
-            </View>
-          )}
-
-          <Text style={addCatStyles.fieldLabel}>Color</Text>
-          <View style={addCatStyles.colorGrid}>
-            {PRESET_COLORS.map((c) => (
-              <TouchableOpacity
-                key={c}
-                style={[
-                  addCatStyles.colorSwatch,
-                  { backgroundColor: c },
-                  selectedColor === c && addCatStyles.colorSwatchSelected,
-                ]}
-                onPress={() => setSelectedColor(c)}
-              >
-                {selectedColor === c && (
-                  <Ionicons name="checkmark" size={12} color="white" />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <TouchableOpacity
-            style={[addCatStyles.createBtn, (!name.trim() || saving) && addCatStyles.createBtnDisabled]}
-            onPress={handleSave}
-            disabled={!name.trim() || saving}
-            activeOpacity={0.85}
-          >
-            {saving ? (
-              <ActivityIndicator size="small" color={colors.brandYellow} />
-            ) : (
-              <Text style={addCatStyles.createBtnText}>
-                {editCategory ? 'Save Changes' : 'Create Category'}
-              </Text>
-            )}
-          </TouchableOpacity>
-        </MotiView>
-      </KeyboardAvoidingView>
-    </Modal>
-  );
-}
-
-// ─── Category chip (grid item) ───────────────────────────────────────────────
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
-
-function CategoryChip({
-  category,
-  isPinned,
-  onPress,
-  onLongPress,
-}: {
-  category: RawCategory;
-  isPinned?: boolean;
-  onPress: () => void;
-  onLongPress: () => void;
-}) {
-  return (
-    <TouchableOpacity
-      style={[catGridStyles.chip, isPinned && catGridStyles.chipPinned]}
-      onPress={onPress}
-      onLongPress={onLongPress}
-      activeOpacity={0.75}
-    >
-      <View style={[catGridStyles.chipCircle, { backgroundColor: category.color }]}>
-        <Text style={catGridStyles.chipInitial}>
-          {category.name.charAt(0).toUpperCase()}
-        </Text>
-        {isPinned && <View style={catGridStyles.pinnedDot} />}
-      </View>
-      <Text style={catGridStyles.chipLabel} numberOfLines={1}>{category.name}</Text>
     </TouchableOpacity>
   );
 }
@@ -618,8 +415,11 @@ function BudgetAlertRow({
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const db = useSQLiteContext();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const currency = useSettingsStore((s) => s.defaultCurrency);
   const setCurrency = useSettingsStore((s) => s.setDefaultCurrency);
+  const backTapEnabled = useSettingsStore((s) => s.backTapEnabled);
+  const setBackTapEnabled = useSettingsStore((s) => s.setBackTapEnabled);
   const sensitivity = useSettingsStore((s) => s.backTapSensitivity);
   const setSensitivity = useSettingsStore((s) => s.setBackTapSensitivity);
   const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled);
@@ -638,67 +438,110 @@ export default function SettingsScreen() {
     setTimeout(() => setRefreshing(false), 500);
   }, [refresh]);
 
-  const categories = useCategories();
   const allTx = useAllTransactions();
   const catMap = useCategoriesMap();
 
-  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
-  const [showAddCategory, setShowAddCategory] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<RawCategory | null>(null);
-  const [catTab, setCatTab] = useState<'All' | 'IN' | 'OUT' | 'BOTH'>('All');
-  const [exportingCSV, setExportingCSV] = useState(false);
+  const [overlayPermGranted, setOverlayPermGranted] = useState(true);
 
-  const displayedCategories = useMemo(() =>
-    categories.filter((c) => catTab === 'All' ? true : c.flow_type === catTab),
-    [categories, catTab]
-  );
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const check = async () => {
+      const granted = await NativeModules.BackTap?.isOverlayPermissionGranted?.();
+      setOverlayPermGranted(granted ?? true);
+    };
+    check();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') check();
+    });
+    return () => sub.remove();
+  }, []);
 
-  async function handleDeleteCategory(cat: RawCategory) {
-    if (cat.is_system) {
-      Alert.alert('Cannot Delete', 'System categories cannot be deleted.');
-      return;
+  function handleBackTapToggle(enabled: boolean) {
+    setBackTapEnabled(enabled);
+    if (enabled) {
+      NativeModules.BackTap?.start?.();
+    } else {
+      NativeModules.BackTap?.stop?.();
     }
-    Alert.alert(
-      'Delete Category',
-      `Delete "${cat.name}"? Existing transactions with this category will remain.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteCategory(db, cat.id);
-            } catch {
-              Alert.alert('Error', 'Could not delete category.');
-            }
-          },
-        },
-      ]
-    );
+  }
+
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+  const [exportingCSV, setExportingCSV] = useState(false);
+  const [backingUp, setBackingUp] = useState(false);
+  const [importingBackup, setImportingBackup] = useState(false);
+
+  function buildExportTxs(): ExportTransaction[] {
+    return allTx.map((t) => ({
+      id: t.id,
+      flow: t.flow,
+      amount: t.amount,
+      currency: t.currency,
+      categoryName: catMap.get(t.category_id)?.name ?? 'Unknown',
+      status: t.status,
+      method: t.method,
+      note: t.note ?? undefined,
+      khumus_share: t.khumus_share ?? undefined,
+      created_at: t.created_at,
+    }));
   }
 
   async function handleExportCSV() {
     if (exportingCSV) return;
     setExportingCSV(true);
     try {
-      const exportTxs: ExportTransaction[] = allTx.map((t) => ({
-        id: t.id,
-        flow: t.flow,
-        amount: t.amount,
-        currency: t.currency,
-        categoryName: catMap.get(t.category_id)?.name ?? 'Unknown',
-        status: t.status,
-        method: t.method,
-        note: t.note ?? undefined,
-        khumus_share: t.khumus_share ?? undefined,
-        created_at: t.created_at,
-      }));
-      await exportTransactionsCSV(exportTxs);
-    } catch {
+      await exportTransactionsCSV(buildExportTxs());
+    } catch (e) {
       Alert.alert('Export Failed', 'Could not export transactions.');
     } finally {
       setExportingCSV(false);
+    }
+  }
+
+  async function handleBackupJSON() {
+    if (backingUp) return;
+    setBackingUp(true);
+    try {
+      await exportBackupJSON(buildExportTxs());
+    } catch {
+      Alert.alert('Backup Failed', 'Could not create backup file.');
+    } finally {
+      setBackingUp(false);
+    }
+  }
+
+  async function handleImportBackup() {
+    if (importingBackup) return;
+    setImportingBackup(true);
+    try {
+      const backup = await readBackupFile();
+      const cats = await db.getAllAsync<{ id: string; name: string }>('SELECT id, name FROM categories');
+      const catMap = new Map(cats.map((c) => [c.name, c.id]));
+      let imported = 0;
+      let skipped = 0;
+      for (const tx of backup.transactions) {
+        const categoryId = catMap.get(tx.categoryName);
+        if (!categoryId) { skipped++; continue; }
+        await db.runAsync(
+          `INSERT OR IGNORE INTO transactions
+            (id, flow, amount, currency, category_id, status, paid_amount, method, note, loan_id, khumus_share, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [tx.id, tx.flow, tx.amount, tx.currency, categoryId, tx.status, 0, tx.method,
+           tx.note ?? null, null, tx.khumus_share ?? null, tx.created_at, tx.created_at]
+        );
+        imported++;
+      }
+      useDataRefreshStore.getState().refresh();
+      Alert.alert(
+        'Import Complete',
+        skipped > 0
+          ? `${imported} transactions imported, ${skipped} skipped (category not found).`
+          : `${imported} transactions imported successfully.`
+      );
+    } catch (e: any) {
+      if (e?.message === 'cancelled') return;
+      Alert.alert('Import Failed', 'The file could not be read. Make sure it is a valid Xpense backup.');
+    } finally {
+      setImportingBackup(false);
     }
   }
 
@@ -734,20 +577,6 @@ export default function SettingsScreen() {
               onPress={() => setShowCurrencyPicker(true)}
             />
             <View style={styles.rowDivider} />
-            <View style={styles.sensitivityBlock}>
-              <View style={styles.sensitivityBlockHeader}>
-                <View style={styles.settingsRowIcon}>
-                  <Ionicons name="phone-portrait-outline" size={16} color={colors.brandPurple} />
-                </View>
-                <Text style={[styles.settingsRowLabel, { flex: 1, marginLeft: 12 }]}>
-                  Back-Tap Sensitivity
-                </Text>
-              </View>
-              <BackTapSlider value={sensitivity} onChange={setSensitivity} />
-            </View>
-            <View style={styles.rowDivider} />
-            <BackTapTestRow sensitivity={sensitivity} />
-            <View style={styles.rowDivider} />
             <SettingsRow
               icon="notifications-outline"
               label="Monthly Notifications"
@@ -763,6 +592,64 @@ export default function SettingsScreen() {
           </View>
         </MotiView>
 
+        {/* ── Back Tap ── */}
+        <MotiView
+          from={{ opacity: 0, translateY: 10 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: 'spring', delay: 80, damping: 22, stiffness: 280 }}
+        >
+          <SectionHeader title="Back Tap" />
+          <View style={styles.card}>
+            <SettingsRow
+              icon="phone-portrait-outline"
+              label="Back Tap"
+              sublabel="Triple-tap back of phone to open quick entry"
+              right={
+                <Switch
+                  value={backTapEnabled}
+                  onValueChange={handleBackTapToggle}
+                  trackColor={{ false: colors.surfaceBorder, true: colors.brandViolet + '66' }}
+                  thumbColor={backTapEnabled ? colors.brandViolet : colors.textDisabled}
+                />
+              }
+            />
+            {backTapEnabled && (
+              <>
+                <View style={styles.rowDivider} />
+                <View style={styles.sensitivityBlock}>
+                  <View style={styles.sensitivityBlockHeader}>
+                    <View style={styles.settingsRowIcon}>
+                      <Ionicons name="options-outline" size={16} color={colors.brandPurple} />
+                    </View>
+                    <Text style={[styles.settingsRowLabel, { flex: 1, marginLeft: 12 }]}>
+                      Sensitivity
+                    </Text>
+                  </View>
+                  <BackTapSlider value={sensitivity} onChange={setSensitivity} />
+                </View>
+                <View style={styles.rowDivider} />
+                <BackTapTestRow sensitivity={sensitivity} />
+                {Platform.OS === 'android' && (
+                  <>
+                    <View style={styles.rowDivider} />
+                    <SettingsRow
+                      icon={overlayPermGranted ? 'shield-checkmark-outline' : 'alert-circle-outline'}
+                      label="Background Access"
+                      sublabel={
+                        overlayPermGranted
+                          ? 'Overlay permission granted'
+                          : 'Required – tap to allow "Display over other apps"'
+                      }
+                      onPress={overlayPermGranted ? undefined : () => NativeModules.BackTap?.requestOverlayPermission?.()}
+                      destructive={!overlayPermGranted}
+                    />
+                  </>
+                )}
+              </>
+            )}
+          </View>
+        </MotiView>
+
         {/* ── Categories ── */}
         <MotiView
           from={{ opacity: 0, translateY: 10 }}
@@ -770,44 +657,13 @@ export default function SettingsScreen() {
           transition={{ type: 'spring', delay: 100, damping: 22, stiffness: 280 }}
         >
           <SectionHeader title="Categories" />
-
-          {/* Tab filter row */}
-          <View style={catGridStyles.tabRow}>
-            {(['All', 'IN', 'OUT', 'BOTH'] as const).map((t) => (
-              <TouchableOpacity
-                key={t}
-                style={[catGridStyles.tab, catTab === t && catGridStyles.tabActive]}
-                onPress={() => setCatTab(t)}
-                activeOpacity={0.75}
-              >
-                <Text style={[catGridStyles.tabText, catTab === t && catGridStyles.tabTextActive]}>
-                  {t === 'IN' ? 'Income' : t === 'OUT' ? 'Expense' : t}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Category grid */}
-          <View style={catGridStyles.grid}>
-            {displayedCategories.map((cat) => (
-              <CategoryChip
-                key={cat.id}
-                category={cat}
-                isPinned={pinnedCategoryNames.includes(cat.name)}
-                onPress={() => setEditingCategory(cat)}
-                onLongPress={() => handleDeleteCategory(cat)}
-              />
-            ))}
-            <TouchableOpacity
-              style={catGridStyles.chip}
-              onPress={() => setShowAddCategory(true)}
-              activeOpacity={0.75}
-            >
-              <View style={catGridStyles.addChipCircle}>
-                <Ionicons name="add" size={22} color={colors.brandPurple} />
-              </View>
-              <Text style={catGridStyles.chipLabel}>Add</Text>
-            </TouchableOpacity>
+          <View style={styles.card}>
+            <SettingsRow
+              icon="grid-outline"
+              label="Categories"
+              sublabel={`${pinnedCategoryNames.length} active`}
+              onPress={() => navigation.navigate('CategoryManagement')}
+            />
           </View>
         </MotiView>
 
@@ -880,8 +736,25 @@ export default function SettingsScreen() {
             <SettingsRow
               icon="cloud-upload-outline"
               label="Backup Data"
-              sublabel="Save a JSON backup to your device"
-              onPress={() => Alert.alert('Backup', 'Backup feature uses the Export Report function from the Reports screen.')}
+              sublabel={backingUp ? 'Backing up…' : 'Save a JSON backup to your device'}
+              onPress={backingUp ? undefined : handleBackupJSON}
+              right={
+                backingUp ? (
+                  <ActivityIndicator size="small" color={colors.brandPurple} />
+                ) : undefined
+              }
+            />
+            <View style={styles.rowDivider} />
+            <SettingsRow
+              icon="cloud-download-outline"
+              label="Restore Backup"
+              sublabel={importingBackup ? 'Importing…' : 'Import from a JSON backup file'}
+              onPress={importingBackup ? undefined : handleImportBackup}
+              right={
+                importingBackup ? (
+                  <ActivityIndicator size="small" color={colors.brandPurple} />
+                ) : undefined
+              }
             />
           </View>
         </MotiView>
@@ -894,7 +767,7 @@ export default function SettingsScreen() {
         >
           <SectionHeader title="About" />
           <View style={styles.card}>
-            <SettingsRow icon="information-circle-outline" label="Version" sublabel="1.0.0" />
+            <SettingsRow icon="information-circle-outline" label="Version" sublabel="2.0.0" />
             <View style={styles.rowDivider} />
             <View style={styles.settingsRow}>
               <View style={styles.settingsRowIcon}>
@@ -942,12 +815,6 @@ export default function SettingsScreen() {
         onSelect={setCurrency}
         onClose={() => setShowCurrencyPicker(false)}
       />
-      <AddCategoryModal
-        visible={showAddCategory || editingCategory !== null}
-        editCategory={editingCategory ?? undefined}
-        onClose={() => { setShowAddCategory(false); setEditingCategory(null); }}
-        onCreated={() => {}}
-      />
     </View>
   );
 }
@@ -975,7 +842,7 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     fontFamily: fonts.sansBold,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textMuted,
     letterSpacing: 0.6,
     textTransform: 'uppercase',
@@ -1023,12 +890,12 @@ const styles = StyleSheet.create({
   },
   settingsRowLabel: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
   },
   settingsRowSub: {
     fontFamily: fonts.sans,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textMuted,
   },
   /* Sensitivity slider block */
@@ -1096,7 +963,7 @@ const styles = StyleSheet.create({
   },
   catRowName: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
   },
   catRowMeta: {
@@ -1112,7 +979,7 @@ const styles = StyleSheet.create({
   },
   systemBadgeText: {
     fontFamily: fonts.sans,
-    fontSize: 9,
+    fontSize: 10,
     color: colors.textDisabled,
     letterSpacing: 0.2,
   },
@@ -1128,135 +995,11 @@ const styles = StyleSheet.create({
   },
   addCatBtnText: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.brandPurple,
   },
 });
 
-// ─── Add Category Modal styles ────────────────────────────────────────────────
-
-const addCatStyles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(26,16,64,0.4)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: colors.surfaceBg,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
-    paddingBottom: 36,
-    gap: 14,
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    backgroundColor: colors.textDisabled,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 4,
-  },
-  title: {
-    fontFamily: fonts.sansBold,
-    fontSize: 17,
-    color: colors.textPrimary,
-  },
-  fieldLabel: {
-    fontFamily: fonts.sansMedium,
-    fontSize: 11,
-    color: colors.textMuted,
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
-  },
-  input: {
-    backgroundColor: colors.surfaceCard,
-    borderRadius: 12,
-    borderWidth: 0.5,
-    borderColor: colors.surfaceBorder,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontFamily: fonts.sans,
-    fontSize: 14,
-    color: colors.textPrimary,
-    marginTop: -6,
-  },
-  dirRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: -6,
-  },
-  dirChip: {
-    flex: 1,
-    paddingVertical: 9,
-    borderRadius: 10,
-    alignItems: 'center',
-    backgroundColor: colors.surfaceCard,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-  },
-  dirChipActive: {
-    backgroundColor: colors.brandNavy,
-    borderColor: colors.brandNavy,
-  },
-  dirChipText: {
-    fontFamily: fonts.sansMedium,
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  dirChipTextActive: {
-    color: colors.textInverse,
-  },
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: -6,
-  },
-  toggleLabel: {
-    fontFamily: fonts.sansMedium,
-    fontSize: 13,
-    color: colors.textPrimary,
-  },
-  colorGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: -6,
-  },
-  colorSwatch: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  colorSwatchSelected: {
-    borderWidth: 2.5,
-    borderColor: 'white',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  createBtn: {
-    backgroundColor: colors.brandNavy,
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 4,
-  },
-  createBtnDisabled: {
-    opacity: 0.45,
-  },
-  createBtnText: {
-    fontFamily: fonts.sansBold,
-    fontSize: 15,
-    color: colors.brandYellow,
-  },
-});
 
 // ─── Currency Picker styles ───────────────────────────────────────────────────
 
@@ -1302,7 +1045,7 @@ const currStyle = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontFamily: fonts.sans,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
     padding: 0,
     margin: 0,
@@ -1321,108 +1064,18 @@ const currStyle = StyleSheet.create({
   },
   currCode: {
     fontFamily: fonts.monoBold,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
     width: 44,
   },
   currName: {
     fontFamily: fonts.sans,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textMuted,
     flex: 1,
   },
 });
 
-// ─── Category grid styles ─────────────────────────────────────────────────────
-
-const catGridStyles = StyleSheet.create({
-  tabRow: {
-    flexDirection: 'row',
-    gap: 6,
-    marginBottom: 12,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 7,
-    borderRadius: 10,
-    alignItems: 'center',
-    backgroundColor: colors.surfaceCard,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-  },
-  tabActive: {
-    backgroundColor: colors.brandNavy,
-    borderColor: colors.brandNavy,
-  },
-  tabText: {
-    fontFamily: fonts.sansMedium,
-    fontSize: 11,
-    color: colors.textMuted,
-  },
-  tabTextActive: {
-    color: colors.textInverse,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    backgroundColor: colors.surfaceCard,
-    borderRadius: 16,
-    borderWidth: 0.5,
-    borderColor: colors.surfaceBorder,
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-  },
-  chip: {
-    width: (SCREEN_WIDTH - 48) / 3,
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 10,
-  },
-  chipCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  chipInitial: {
-    fontFamily: fonts.sansBold,
-    fontSize: 18,
-    color: 'white',
-  },
-  chipLabel: {
-    fontFamily: fonts.sansMedium,
-    fontSize: 10,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
-  addChipCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.brandPale,
-    borderWidth: 1.5,
-    borderColor: colors.brandPurple,
-    borderStyle: 'dashed',
-  },
-  chipPinned: {
-    backgroundColor: colors.brandPale,
-    borderRadius: 14,
-  },
-  pinnedDot: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.brandYellow,
-    borderWidth: 1.5,
-    borderColor: 'white',
-  },
-});
 
 // ─── Slider styles ────────────────────────────────────────────────────────────
 
@@ -1474,7 +1127,7 @@ const sliderStyles = StyleSheet.create({
   },
   labelCurrent: {
     fontFamily: fonts.sansBold,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.brandNavy,
   },
 });
@@ -1497,7 +1150,7 @@ const baStyles = StyleSheet.create({
   },
   threshBadgeText: {
     fontFamily: fonts.sansBold,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.brandPurple,
   },
   threshInput: {
@@ -1508,7 +1161,7 @@ const baStyles = StyleSheet.create({
     paddingHorizontal: 7,
     paddingVertical: 2,
     fontFamily: fonts.mono,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textPrimary,
     minWidth: 40,
     textAlign: 'center',
@@ -1537,7 +1190,7 @@ const testRowStyles = StyleSheet.create({
   },
   testBtnText: {
     fontFamily: fonts.sansBold,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.brandPurple,
   },
   dotsRow: {

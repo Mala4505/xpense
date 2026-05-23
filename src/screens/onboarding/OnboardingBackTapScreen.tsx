@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Animated,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -42,33 +41,12 @@ export default function OnboardingBackTapScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavProp>();
 
-  // Ripple animation
-  const rippleScale = useRef(new Animated.Value(0)).current;
-  const rippleOpacity = useRef(new Animated.Value(0.5)).current;
-
   // Test state
   const [tapCount, setTapCount] = useState(0);
   const [testPassed, setTestPassed] = useState(false);
   const tapCountRef = useRef(0);
   const lastTapTimeRef = useRef(0);
   const subscriptionRef = useRef<any>(null);
-
-  useEffect(() => {
-    const anim = Animated.loop(
-      Animated.sequence([
-        Animated.parallel([
-          Animated.timing(rippleScale, { toValue: 1, duration: 1200, useNativeDriver: true }),
-          Animated.timing(rippleOpacity, { toValue: 0, duration: 1200, useNativeDriver: true }),
-        ]),
-        Animated.parallel([
-          Animated.timing(rippleScale, { toValue: 0, duration: 0, useNativeDriver: true }),
-          Animated.timing(rippleOpacity, { toValue: 0.5, duration: 0, useNativeDriver: true }),
-        ]),
-      ])
-    );
-    anim.start();
-    return () => anim.stop();
-  }, []);
 
   useEffect(() => {
     let active = true;
@@ -139,14 +117,16 @@ export default function OnboardingBackTapScreen() {
         >
           <View style={styles.bgGradientCircle} />
           <View style={styles.phone}>
-            <Animated.View
-              style={[
-                styles.ripple,
-                {
-                  transform: [{ scale: Animated.multiply(rippleScale, new Animated.Value(2.5)) }],
-                  opacity: rippleOpacity,
-                },
-              ]}
+            <MotiView
+              from={{ scale: 0, opacity: 0.5 }}
+              animate={{ scale: 2.5, opacity: 0 }}
+              transition={{
+                type: 'timing',
+                duration: 1200,
+                loop: true,
+                repeatReverse: false,
+              }}
+              style={styles.ripple}
             />
             <View style={styles.rippleInner} />
             <Ionicons name="finger-print" size={32} color="white" style={styles.touchIcon} />

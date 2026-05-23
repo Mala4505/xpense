@@ -1,0 +1,13 @@
+{
+  "files.exclude": {
+    "**/node_modules": true
+  },
+  "search.exclude": {
+    "**/node_modules": true
+  },
+  "kotlin.diagnostics.enabled": true,
+  "kotlin.diagnostics.debounceTime": 1000,
+  "java.import.exclusions": [
+    "**/node_modules/**"
+  ]
+}

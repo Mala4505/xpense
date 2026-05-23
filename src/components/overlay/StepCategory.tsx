@@ -41,7 +41,7 @@ export function StepCategory({ onClose }: StepCategoryProps) {
     setFlow,
   } = useOverlayStore();
 
-  const { recentCategories, defaultCurrency } = useSettingsStore();
+  const { recentCategories, defaultCurrency, pinnedCategoryNames } = useSettingsStore();
   const [allCategories, setAllCategories] = useState<RawCategory[]>([]);
   const personInputRef = useRef<TextInput>(null);
   const db = useSQLiteContext();
@@ -55,9 +55,12 @@ export function StepCategory({ onClose }: StepCategoryProps) {
   const isKhumusEligible = !!selectedCategory?.khumus_eligible;
   const khumusShare = isKhumusEligible ? parseFloat(amount || '0') / 5 : 0;
 
-  const recentCats = allCategories.filter((c) => recentCategories.includes(c.id)).slice(0, 3);
-  const loanCats = allCategories.filter((c) => c.is_loan_type);
-  const regularCats = allCategories.filter((c) => !c.is_loan_type);
+  const displayCategories = allCategories.filter(
+    (c) => c.is_loan_type === 1 || pinnedCategoryNames.includes(c.name)
+  );
+  const recentCats = displayCategories.filter((c) => recentCategories.includes(c.id)).slice(0, 3);
+  const loanCats = displayCategories.filter((c) => c.is_loan_type);
+  const regularCats = displayCategories.filter((c) => !c.is_loan_type);
 
   function handleSelectCategory(cat: any) {
     setSelectedCategory(cat.id);
@@ -248,7 +251,7 @@ const styles = StyleSheet.create({
   },
   amountStripText: {
     fontFamily: fonts.mono,
-    fontSize: 18,
+    fontSize: 17,
     letterSpacing: -0.5,
   },
   divider: {
@@ -317,7 +320,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkMarkText: {
-    fontSize: 11,
+    fontSize: 10,
     color: colors.income,
     fontFamily: fonts.sansBold,
   },
@@ -335,7 +338,7 @@ const styles = StyleSheet.create({
   },
   footerHint: {
     fontFamily: fonts.sans,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textDisabled,
     textAlign: 'center',
     paddingVertical: 10,

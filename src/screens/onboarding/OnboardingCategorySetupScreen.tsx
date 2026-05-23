@@ -14,6 +14,7 @@ import { colors } from '../../theme/colors';
 import { fonts } from '../../theme/fonts';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { RootStackParamList } from '../../navigation/RootNavigator';
+import { DEFAULT_CATEGORIES } from '../../utils/categories';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'OnboardingCategorySetup'>;
 
@@ -33,30 +34,20 @@ function ProgressBars({ filled }: { filled: number }) {
   );
 }
 
-interface CategoryItem {
+interface CategoryDef {
   name: string;
   icon: string;
   color: string;
-  flow: 'IN' | 'OUT';
+  flow_type: string;
 }
 
-const INCOME_CATEGORIES: CategoryItem[] = [
-  { name: 'Salary',       icon: 'cash-outline',           color: colors.income,    flow: 'IN' },
-  { name: 'Freelance',    icon: 'briefcase-outline',       color: colors.income,    flow: 'IN' },
-  { name: 'Gift Received',icon: 'gift-outline',            color: colors.income,    flow: 'IN' },
-  { name: 'Investment',   icon: 'trending-up-outline',     color: colors.income,    flow: 'IN' },
-  { name: 'Other Income', icon: 'add-circle-outline',      color: colors.income,    flow: 'IN' },
-];
+const INCOME_CATEGORIES = DEFAULT_CATEGORIES.filter(
+  (c) => !c.is_loan_type && c.flow_type === 'IN'
+);
 
-const EXPENSE_CATEGORIES: CategoryItem[] = [
-  { name: 'Daily Expenses', icon: 'bag-outline',           color: colors.expense,   flow: 'OUT' },
-  { name: 'Grocery',        icon: 'cart-outline',           color: colors.expense,   flow: 'OUT' },
-  { name: 'Bills',          icon: 'flash-outline',          color: colors.expense,   flow: 'OUT' },
-  { name: 'Medical',        icon: 'medkit-outline',         color: colors.expense,   flow: 'OUT' },
-  { name: 'Sadaqah',        icon: 'heart-outline',          color: colors.expense,   flow: 'OUT' },
-  { name: 'Wakaf',          icon: 'business-outline',       color: colors.expense,   flow: 'OUT' },
-  { name: 'Khumus Paid',    icon: 'star-outline',           color: colors.expense,   flow: 'OUT' },
-];
+const EXPENSE_CATEGORIES = DEFAULT_CATEGORIES.filter(
+  (c) => !c.is_loan_type && (c.flow_type === 'OUT' || c.flow_type === 'BOTH')
+);
 
 const DEFAULT_SELECTED = ['Salary', 'Investment', 'Daily Expenses', 'Grocery', 'Sadaqah'];
 
@@ -65,7 +56,7 @@ function CategoryCard({
   selected,
   onToggle,
 }: {
-  item: CategoryItem;
+  item: CategoryDef;
   selected: boolean;
   onToggle: () => void;
 }) {
@@ -222,7 +213,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontFamily: fonts.sansBold,
-    fontSize: 20,
+    fontSize: 22,
     color: colors.brandNavy,
     letterSpacing: -0.4,
   },
@@ -379,7 +370,7 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     fontFamily: fonts.sansBold,
-    fontSize: 16,
+    fontSize: 17,
     color: colors.brandNavy,
   },
 });

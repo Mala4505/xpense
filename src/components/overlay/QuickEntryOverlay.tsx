@@ -5,7 +5,6 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  View,
 } from 'react-native';
 import { MotiView, AnimatePresence } from 'moti';
 import { colors } from '../../theme/colors';
@@ -15,11 +14,72 @@ import { StepCategory } from './StepCategory';
 import { StepNote } from './StepNote';
 
 export function QuickEntryOverlay() {
-  const { isOpen, step, closeOverlay, resetOverlay } = useOverlayStore();
+  const { isOpen, step, closeOverlay, resetOverlay, isOverlayActivity } = useOverlayStore();
 
   function handleClose() {
     closeOverlay();
     setTimeout(resetOverlay, 350);
+  }
+
+  const inner = (
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <Pressable style={styles.backdrop} onPress={handleClose}>
+        <Pressable style={styles.cardWrapper} onPress={() => {}}>
+          <MotiView
+            from={{ opacity: 0, translateY: -18, scale: 0.97 }}
+            animate={{ opacity: 1, translateY: 0, scale: 1 }}
+            transition={{ type: 'spring', damping: 22, stiffness: 300 }}
+            style={styles.card}
+          >
+            <AnimatePresence exitBeforeEnter>
+              {step === 'amount' && (
+                <MotiView
+                  key="step-amount"
+                  from={{ opacity: 0, translateX: 16 }}
+                  animate={{ opacity: 1, translateX: 0 }}
+                  exit={{ opacity: 0, translateX: -16 }}
+                  transition={{ type: 'timing', duration: 180 }}
+                >
+                  <StepAmount onClose={handleClose} />
+                </MotiView>
+              )}
+              {step === 'category' && (
+                <MotiView
+                  key="step-category"
+                  from={{ opacity: 0, translateX: 16 }}
+                  animate={{ opacity: 1, translateX: 0 }}
+                  exit={{ opacity: 0, translateX: -16 }}
+                  transition={{ type: 'timing', duration: 180 }}
+                >
+                  <StepCategory onClose={handleClose} />
+                </MotiView>
+              )}
+              {step === 'note' && (
+                <MotiView
+                  key="step-note"
+                  from={{ opacity: 0, translateX: 16 }}
+                  animate={{ opacity: 1, translateX: 0 }}
+                  exit={{ opacity: 0, translateX: -16 }}
+                  transition={{ type: 'timing', duration: 180 }}
+                >
+                  <StepNote onClose={handleClose} />
+                </MotiView>
+              )}
+            </AnimatePresence>
+          </MotiView>
+        </Pressable>
+      </Pressable>
+    </KeyboardAvoidingView>
+  );
+
+  // OverlayActivity is itself a transparent window — rendering a <Modal> (Dialog) inside a
+  // translucent activity fails silently on the first draw on Android. Render directly instead.
+  if (isOverlayActivity) {
+    if (!isOpen) return null;
+    return inner;
   }
 
   return (
@@ -30,62 +90,7 @@ export function QuickEntryOverlay() {
       onRequestClose={handleClose}
       statusBarTranslucent
     >
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        {/* Backdrop */}
-        <Pressable style={styles.backdrop} onPress={handleClose}>
-          {/* Card — inner Pressable stops tap from closing overlay */}
-          <Pressable style={styles.cardWrapper} onPress={() => {}}>
-            <MotiView
-              from={{ opacity: 0, translateY: -18, scale: 0.97 }}
-              animate={{ opacity: 1, translateY: 0, scale: 1 }}
-              transition={{ type: 'spring', damping: 22, stiffness: 300 }}
-              style={styles.card}
-            >
-              {/* Step content with slide transitions */}
-              <AnimatePresence exitBeforeEnter>
-                {step === 'amount' && (
-                  <MotiView
-                    key="step-amount"
-                    from={{ opacity: 0, translateX: 16 }}
-                    animate={{ opacity: 1, translateX: 0 }}
-                    exit={{ opacity: 0, translateX: -16 }}
-                    transition={{ type: 'timing', duration: 180 }}
-                  >
-                    <StepAmount onClose={handleClose} />
-                  </MotiView>
-                )}
-
-                {step === 'category' && (
-                  <MotiView
-                    key="step-category"
-                    from={{ opacity: 0, translateX: 16 }}
-                    animate={{ opacity: 1, translateX: 0 }}
-                    exit={{ opacity: 0, translateX: -16 }}
-                    transition={{ type: 'timing', duration: 180 }}
-                  >
-                    <StepCategory onClose={handleClose} />
-                  </MotiView>
-                )}
-
-                {step === 'note' && (
-                  <MotiView
-                    key="step-note"
-                    from={{ opacity: 0, translateX: 16 }}
-                    animate={{ opacity: 1, translateX: 0 }}
-                    exit={{ opacity: 0, translateX: -16 }}
-                    transition={{ type: 'timing', duration: 180 }}
-                  >
-                    <StepNote onClose={handleClose} />
-                  </MotiView>
-                )}
-              </AnimatePresence>
-            </MotiView>
-          </Pressable>
-        </Pressable>
-      </KeyboardAvoidingView>
+      {inner}
     </Modal>
   );
 }

@@ -13,7 +13,7 @@ export function Card({ children, style }: CardProps) {
       style={[
         {
           backgroundColor: colors.surfaceCard,
-          borderRadius: 18,
+          borderRadius: 16,
           borderWidth: 0.5,
           borderColor: colors.surfaceBorder,
           padding: 14,

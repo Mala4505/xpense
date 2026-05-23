@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   },
   cardAmount: {
     fontFamily: fonts.mono,
-    fontSize: 19,
+    fontSize: 17,
     color: colors.textInverse,
     letterSpacing: -0.3,
   },

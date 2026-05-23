@@ -75,7 +75,7 @@ export function BudgetCard({ budget, monthLabel, onPress }: BudgetCardProps) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surfaceCard,
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 0.5,
     borderColor: colors.surfaceBorder,
     padding: 16,
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   },
   monthLabel: {
     fontFamily: fonts.sans,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textMuted,
     marginTop: 2,
   },
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   },
   limitText: {
     fontFamily: fonts.mono,
-    fontSize: 16,
+    fontSize: 17,
     color: colors.textMuted,
   },
   barTrack: {
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontFamily: fonts.sans,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textMuted,
   },
 });

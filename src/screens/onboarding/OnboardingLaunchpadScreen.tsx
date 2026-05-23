@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontFamily: fonts.sans,
-    fontSize: 16,
+    fontSize: 17,
     color: '#484550',
     textAlign: 'center',
     maxWidth: 280,
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     fontFamily: fonts.sansBold,
-    fontSize: 20,
+    fontSize: 22,
     color: colors.brandNavy,
   },
 });

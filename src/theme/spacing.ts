@@ -13,6 +13,7 @@ export const spacing = {
   stackSm: 8,
   stackMd: 16,
   stackLg: 24,
+  cardRadius: 16,
 } as const;
 
 export type SpacingToken = keyof typeof spacing;

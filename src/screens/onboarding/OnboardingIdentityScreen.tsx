@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontFamily: fonts.sansBold,
-    fontSize: 20,
+    fontSize: 22,
     color: colors.brandNavy,
     letterSpacing: -0.4,
   },
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontFamily: fonts.sans,
-    fontSize: 16,
+    fontSize: 17,
     color: '#484550',
     lineHeight: 24,
     marginBottom: 32,
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontFamily: fonts.sansBold,
-    fontSize: 20,
+    fontSize: 22,
     color: colors.textPrimary,
     backgroundColor: 'transparent',
     padding: 0,
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     fontFamily: fonts.sansBold,
-    fontSize: 16,
+    fontSize: 17,
     color: colors.brandNavy,
   },
 });

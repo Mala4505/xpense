@@ -30,6 +30,11 @@ export const colors = {
   loanBg: '#FFF3D0',
   pending: '#3B82F6',
   pendingBg: '#EFF6FF',
+
+  // Extended tokens
+  swipeEdit: '#5B35D4',
+  overlayScrim: 'rgba(30, 16, 88, 0.45)',
+  accentLavender: '#aa7dff',
 } as const;
 
 export type ColorToken = keyof typeof colors;

@@ -209,13 +209,13 @@ const styles = StyleSheet.create({
   },
   currLabel: {
     fontFamily: fonts.sansMedium,
-    fontSize: 16,
+    fontSize: 17,
     color: colors.textMuted,
     minWidth: 40,
   },
   amountInput: {
     fontFamily: fonts.mono,
-    fontSize: 32,
+    fontSize: 30,
     flex: 1,
     color: colors.textPrimary,
     letterSpacing: -0.5,
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   },
   saveBtnText: {
     fontFamily: fonts.sansBold,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.brandYellow,
     letterSpacing: 0.2,
   },
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
   },
   removeBtnText: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.expense,
   },
 });

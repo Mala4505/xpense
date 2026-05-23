@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   },
   catName: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
     flex: 1,
     marginRight: 8,
@@ -142,13 +142,13 @@ const styles = StyleSheet.create({
   },
   spentText: {
     fontFamily: fonts.mono,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textPrimary,
     letterSpacing: -0.2,
   },
   limitText: {
     fontFamily: fonts.mono,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textMuted,
     letterSpacing: -0.2,
   },

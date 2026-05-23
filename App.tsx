@@ -13,7 +13,7 @@ import {
   SpaceMono_700Bold,
 } from '@expo-google-fonts/space-mono';
 import { StatusBar } from 'expo-status-bar';
-import { View, Linking } from 'react-native';
+import { View, Linking, NativeModules, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
@@ -21,7 +21,6 @@ import RootNavigator from './src/navigation/RootNavigator';
 import { fonts } from './src/theme';
 import { onInit } from './src/db/database';
 import { useOverlayStore } from './src/stores/overlayStore';
-import { useBackTap } from './src/hooks/useBackTap';
 import { QuickEntryOverlay } from './src/components/overlay/QuickEntryOverlay';
 import { Toast } from './src/components/ui/Toast';
 import {
@@ -35,11 +34,11 @@ SplashScreen.preventAutoHideAsync();
 
 function AppContent({ fontsLoaded }: { fontsLoaded: boolean }) {
   const db = useSQLiteContext();
-  const openOverlay = useOverlayStore((s) => s.openOverlay);
+  const isOverlayActivity = useOverlayStore((s) => s.isOverlayActivity);
   const currency = useSettingsStore((s) => s.defaultCurrency);
+  const backTapEnabled = useSettingsStore((s) => s.backTapEnabled);
+  const hasHydrated = useSettingsStore((s) => s._hasHydrated);
   const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled);
-
-  useBackTap(openOverlay);
 
   useEffect(() => {
     if (fontsLoaded) SplashScreen.hideAsync();
@@ -87,6 +86,13 @@ function AppContent({ fontsLoaded }: { fontsLoaded: boolean }) {
   }, [notificationsEnabled, currency, db]);
 
   useEffect(() => {
+    if (!hasHydrated || Platform.OS !== 'android') return;
+    if (!backTapEnabled) {
+      NativeModules.BackTap?.stop?.();
+    }
+  }, [hasHydrated, backTapEnabled]);
+
+  useEffect(() => {
     const handleUrl = ({ url }: { url: string }) => {
       if (url === 'xpense://overlay') {
         useOverlayStore.getState().openOverlay();
@@ -102,7 +108,7 @@ function AppContent({ fontsLoaded }: { fontsLoaded: boolean }) {
       <NavigationContainer>
         <RootNavigator />
       </NavigationContainer>
-      <QuickEntryOverlay />
+      {!isOverlayActivity && <QuickEntryOverlay />}
       <Toast />
     </View>
   );

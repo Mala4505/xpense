@@ -6,6 +6,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -16,6 +17,7 @@ import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { fonts } from '../../theme/fonts';
+import { springs } from '../../theme/springs';
 import { formatAmount } from '../../utils/currency';
 import { formatTransactionDate, formatTransactionTime } from '../../utils/date';
 import { CategoryIcon } from './CategoryIcon';
@@ -62,13 +64,13 @@ function SwipeableRow({
     })
     .onEnd((e) => {
       if (e.translationX < -SWIPE_THRESHOLD / 2) {
-        translateX.value = withSpring(-DELETE_ZONE, { damping: 20, stiffness: 300 });
+        translateX.value = withSpring(-DELETE_ZONE, springs.snappy);
         isOpen.value = 'delete';
       } else if (e.translationX > SWIPE_THRESHOLD / 2) {
-        translateX.value = withSpring(EDIT_ZONE, { damping: 20, stiffness: 300 });
+        translateX.value = withSpring(EDIT_ZONE, springs.snappy);
         isOpen.value = 'edit';
       } else {
-        translateX.value = withSpring(0, { damping: 20, stiffness: 300 });
+        translateX.value = withSpring(0, springs.snappy);
         isOpen.value = 'none';
       }
     });
@@ -88,13 +90,14 @@ function SwipeableRow({
   }));
 
   function handleEditTap() {
-    translateX.value = withSpring(0, { damping: 25, stiffness: 400 });
+    translateX.value = withSpring(0, springs.snappy);
     isOpen.value = 'none';
     onEdit();
   }
 
   function handleDeleteTap() {
-    translateX.value = withSpring(0, { damping: 25, stiffness: 400 });
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    translateX.value = withSpring(0, springs.snappy);
     isOpen.value = 'none';
     onDelete();
   }
@@ -186,12 +189,7 @@ export function TransactionRow({
     <MotiView
       from={{ opacity: 0, translateY: 6 }}
       animate={{ opacity: 1, translateY: 0 }}
-      transition={{
-        type: 'spring',
-        delay: animationIndex * 50,
-        damping: 22,
-        stiffness: 320,
-      }}
+      transition={{ ...springs.snappy, delay: animationIndex * 50 }}
     >
       {rowContent}
     </MotiView>
@@ -218,7 +216,7 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    backgroundColor: '#4F8EF7',
+    backgroundColor: colors.swipeEdit,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 10,
@@ -241,7 +239,7 @@ const styles = StyleSheet.create({
   },
   actionLabel: {
     fontFamily: fonts.sansMedium,
-    fontSize: 9,
+    fontSize: 10,
     color: colors.textInverse,
     letterSpacing: 0.3,
   },

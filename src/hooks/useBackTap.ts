@@ -2,17 +2,14 @@ import { Accelerometer } from 'expo-sensors';
 import { useEffect, useRef } from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
 
-const SENSITIVITY_MAP = {
-  low: 1.7,
-  medium: 1.4,
-  high: 1.1,
-};
-
 const TAP_WINDOW_MS  = 500;
 const COOLDOWN_MS    = 1500;
 const MIN_TAP_GAP_MS = 120;
-const QUIET_FLOOR    = 1.0;   // magnitude must drop below this between taps
-const MIN_QUIET_MS   = 60;    // must stay quiet this long before next tap counts
+
+// sensitivity: 0.0 = low (hard tap needed), 1.0 = high (light tap) → threshold in g-forces
+function sensitivityToThreshold(s: number) {
+  return 1.7 - s * 0.6;
+}
 
 export function useBackTap(onTripleTap: () => void) {
   const sensitivity = useSettingsStore((s) => s.backTapSensitivity);
@@ -20,14 +17,12 @@ export function useBackTap(onTripleTap: () => void) {
   const lastTriggerRef = useRef<number>(0);
   const lastTapTimeRef = useRef<number>(0);
   const wasAboveRef = useRef<boolean>(false);
-  const wasQuietRef = useRef<boolean>(true);   // phone starts at rest
-  const lastWentQuietRef = useRef<number>(0);
   const subscriptionRef = useRef<ReturnType<typeof Accelerometer.addListener> | null>(null);
   const onTripleTapRef = useRef(onTripleTap);
   onTripleTapRef.current = onTripleTap;
 
   useEffect(() => {
-    const threshold = SENSITIVITY_MAP[sensitivity];
+    const threshold = sensitivityToThreshold(sensitivity);
     Accelerometer.setUpdateInterval(50);
 
     subscriptionRef.current = Accelerometer.addListener(({ x, y, z }) => {
@@ -35,26 +30,12 @@ export function useBackTap(onTripleTap: () => void) {
       const now = Date.now();
       const isAbove = magnitude > threshold;
 
-      // Track when device returns to resting gravity between taps
-      if (magnitude < QUIET_FLOOR) {
-        if (!wasQuietRef.current) {
-          wasQuietRef.current      = true;
-          lastWentQuietRef.current = now;
-        }
-      }
-
-      // Rising-edge: only count if device was genuinely quiet before this peak
       if (isAbove && !wasAboveRef.current) {
         wasAboveRef.current = true;
-        const quietLongEnough =
-          wasQuietRef.current && (now - lastWentQuietRef.current >= MIN_QUIET_MS);
-
-        if (quietLongEnough && now - lastTapTimeRef.current >= MIN_TAP_GAP_MS) {
+        if (now - lastTapTimeRef.current >= MIN_TAP_GAP_MS) {
           lastTapTimeRef.current = now;
-          wasQuietRef.current    = false;
           tapsRef.current = tapsRef.current.filter((t) => now - t < TAP_WINDOW_MS);
           tapsRef.current.push(now);
-
           if (tapsRef.current.length >= 3 && now - lastTriggerRef.current > COOLDOWN_MS) {
             lastTriggerRef.current = now;
             tapsRef.current = [];

@@ -1,4 +1,4 @@
-const { withAndroidManifest, withDangerousMod, withMainActivity } = require('@expo/config-plugins');
+const { withAndroidManifest, withDangerousMod, withMainActivity, withMainApplication } = require('@expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
 
@@ -15,6 +15,7 @@ function withBackTapPermissions(config) {
     };
     addPerm('android.permission.FOREGROUND_SERVICE');
     addPerm('android.permission.FOREGROUND_SERVICE_SPECIAL_USE');
+    addPerm('android.permission.SYSTEM_ALERT_WINDOW');
 
     const app = manifest.application[0];
     if (!app.service) app.service = [];
@@ -38,15 +39,19 @@ function withBackTapKotlinFile(config) {
     (config) => {
       const pkg = (config.android && config.android.package) || 'com.mala455.Xpense';
       const pkgPath = pkg.split('.').join('/');
-      const dest = path.join(
+      const javaRoot = path.join(
         config.modRequest.platformProjectRoot,
         'app/src/main/java',
-        pkgPath,
-        'BackTapService.kt'
+        pkgPath
       );
-      const src = path.join(__dirname, 'src', 'BackTapService.kt');
-      fs.mkdirSync(path.dirname(dest), { recursive: true });
-      fs.copyFileSync(src, dest);
+      fs.mkdirSync(javaRoot, { recursive: true });
+
+      for (const file of ['BackTapService.kt', 'BackTapModule.kt', 'BackTapPackage.kt']) {
+        fs.copyFileSync(
+          path.join(__dirname, 'src', file),
+          path.join(javaRoot, file)
+        );
+      }
       return config;
     },
   ]);
@@ -75,9 +80,26 @@ function withBackTapMainActivity(config) {
   });
 }
 
+function withBackTapPackageRegistration(config) {
+  return withMainApplication(config, (config) => {
+    let contents = config.modResults.contents;
+
+    if (contents.includes('BackTapPackage')) return config;
+
+    contents = contents.replace(
+      /PackageList\(this\)\.packages\.apply \{/,
+      'PackageList(this).packages.apply {\n      add(BackTapPackage())'
+    );
+
+    config.modResults.contents = contents;
+    return config;
+  });
+}
+
 module.exports = (config) => {
   config = withBackTapPermissions(config);
   config = withBackTapKotlinFile(config);
   config = withBackTapMainActivity(config);
+  config = withBackTapPackageRegistration(config);
   return config;
 };

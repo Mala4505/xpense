@@ -1088,7 +1088,7 @@ function SectionLabel({ title }: { title: string }) {
 
 const sectionStyle: object = {
   fontFamily: fonts.sansMedium,
-  fontSize: 11,
+  fontSize: 10,
   color: colors.textMuted,
   letterSpacing: 0.5,
   textTransform: 'uppercase' as const,
@@ -1754,7 +1754,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontFamily: fonts.sansBold,
-    fontSize: 16,
+    fontSize: 17,
     color: colors.textPrimary,
   },
   scroll: {
@@ -1813,7 +1813,7 @@ const styles = StyleSheet.create({
   /* Amount */
   amountSection: {
     backgroundColor: colors.surfaceCard,
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 0.5,
     borderColor: colors.surfaceBorder,
     padding: 16,
@@ -1827,13 +1827,13 @@ const styles = StyleSheet.create({
   },
   currencyLabel: {
     fontFamily: fonts.sansMedium,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textMuted,
     minWidth: 36,
   },
   amountInput: {
     fontFamily: fonts.mono,
-    fontSize: 34,
+    fontSize: 30,
     flex: 1,
     letterSpacing: -0.5,
     padding: 0,
@@ -1859,7 +1859,7 @@ const styles = StyleSheet.create({
   },
   khumusStripText: {
     fontFamily: fonts.sans,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textMuted,
     flex: 1,
   },
@@ -1885,7 +1885,7 @@ const styles = StyleSheet.create({
   },
   calcBtnText: {
     fontFamily: fonts.sansBold,
-    fontSize: 16,
+    fontSize: 17,
     color: colors.textMuted,
   },
   calcBtnTextActive: {
@@ -1896,7 +1896,7 @@ const styles = StyleSheet.create({
   },
   calcBtnEqualsText: {
     fontFamily: fonts.sansBold,
-    fontSize: 16,
+    fontSize: 17,
     color: colors.brandViolet,
   },
   /* Category grid */
@@ -1947,12 +1947,12 @@ const styles = StyleSheet.create({
   },
   inputPrefix: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textMuted,
   },
   inputText: {
     fontFamily: fonts.sans,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
     flex: 1,
     padding: 0,
@@ -1975,7 +1975,7 @@ const styles = StyleSheet.create({
   },
   dateLabel: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
     flex: 1,
   },
@@ -2070,7 +2070,7 @@ const styles = StyleSheet.create({
   },
   saveBtnText: {
     fontFamily: fonts.sansBold,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.brandYellow,
     letterSpacing: 0.2,
   },

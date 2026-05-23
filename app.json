@@ -2,7 +2,7 @@
   "expo": {
     "name": "Xpense",
     "slug": "Xpense",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "scheme": "xpense",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -18,7 +18,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#130a37"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.mala455.Xpense"
@@ -30,7 +30,10 @@
       "expo-font",
       "expo-sqlite",
       "@react-native-community/datetimepicker",
-      "./plugins/withBackTapService"
+      "./plugins/withBackTapService",
+      "./plugins/withQuickTileService",
+      "./plugins/withOverlayActivity",
+      "expo-sharing"
     ],
     "extra": {
       "eas": {

@@ -15,7 +15,9 @@ interface SettingsStore {
   theme: Theme;
   setTheme: (theme: Theme) => void;
 
-  // Back-Tap Sensitivity (0.0–1.0)
+  // Back-Tap
+  backTapEnabled: boolean;
+  setBackTapEnabled: (enabled: boolean) => void;
   backTapSensitivity: BackTapSensitivity;
   setBackTapSensitivity: (sensitivity: BackTapSensitivity) => void;
 
@@ -64,6 +66,8 @@ export const useSettingsStore = create<SettingsStore>()(
       theme: 'light',
       setTheme: (theme) => set({ theme }),
 
+      backTapEnabled: true,
+      setBackTapEnabled: (enabled) => set({ backTapEnabled: enabled }),
       backTapSensitivity: 0.5,
       setBackTapSensitivity: (sensitivity) => set({ backTapSensitivity: sensitivity }),
 
@@ -103,7 +107,7 @@ export const useSettingsStore = create<SettingsStore>()(
     }),
     {
       name: 'xpense-settings',
-      version: 3,
+      version: 4,
       migrate: (state: any, version: number) => {
         if (version < 2) {
           const map: Record<string, number> = { low: 0.2, medium: 0.5, high: 0.8 };
@@ -118,6 +122,9 @@ export const useSettingsStore = create<SettingsStore>()(
             exceededEnabled: true,
             weeklyDigestEnabled: true,
           };
+        }
+        if (version < 4) {
+          state.backTapEnabled = true;
         }
         return state;
       },

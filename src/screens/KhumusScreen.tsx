@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontFamily: fonts.sansBold,
-    fontSize: 18,
+    fontSize: 17,
     color: colors.textPrimary,
   },
   scrollContent: {
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    borderRadius: 18,
+    borderRadius: 16,
     padding: 14,
     gap: 8,
     borderWidth: 1,
@@ -305,14 +305,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(240,180,41,0.18)',
   },
   statLabel: {
-    fontFamily: fonts.sans,
-    fontSize: 11,
+    fontFamily: fonts.sansMedium,
+    fontSize: 10,
     color: colors.textMuted,
     letterSpacing: 0.2,
   },
   statAmount: {
     fontFamily: fonts.mono,
-    fontSize: 18,
+    fontSize: 17,
     letterSpacing: -0.4,
   },
   dueWarning: {
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
   },
   dueWarningText: {
     fontFamily: fonts.sansMedium,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.brandYellow,
   },
   /* Pay button */
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
   },
   payBtnText: {
     fontFamily: fonts.sansBold,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textPrimary,
   },
   /* Sections */
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontFamily: fonts.sansBold,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
     letterSpacing: 0.2,
   },
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
   },
   breakdownName: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
   },
   breakdownSub: {
@@ -409,13 +409,13 @@ const styles = StyleSheet.create({
   },
   breakdownKhumus: {
     fontFamily: fonts.mono,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.khumus,
     letterSpacing: -0.2,
   },
   breakdownKhumusLabel: {
     fontFamily: fonts.sans,
-    fontSize: 9,
+    fontSize: 10,
     color: colors.textDisabled,
   },
   /* History */
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontFamily: fonts.sans,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textDisabled,
   },
   historyRow: {
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
   },
   historyAmount: {
     fontFamily: fonts.mono,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.khumus,
     letterSpacing: -0.2,
   },

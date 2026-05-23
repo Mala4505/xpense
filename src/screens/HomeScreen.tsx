@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/fonts';
+import { springs } from '../theme/springs';
 import { formatAmount } from '../utils/currency';
 import { PendingStrip } from '../components/home/PendingStrip';
 import { TransactionRow } from '../components/ui/TransactionRow';
@@ -40,9 +41,9 @@ type HomeNavProp = NativeStackNavigationProp<RootStackParamList>;
 // Android uses increasing elevation values to maintain correct stacking order.
 const iosShadow = {
   shadowColor: colors.brandNavy,
-  shadowOffset: { width: 0, height: -10 },
-  shadowOpacity: 0.15,
-  shadowRadius: 20,
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.12,
+  shadowRadius: 16,
 };
 
 export default function HomeScreen() {
@@ -136,7 +137,7 @@ export default function HomeScreen() {
       <MotiView
         from={{ opacity: 0, translateY: 20 }}
         animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: 'spring', delay: 80, damping: 22, stiffness: 280 }}
+        transition={{ ...springs.default, delay: 80 }}
         style={[
           styles.revenueLayer,
           Platform.OS === 'ios' ? iosShadow : { elevation: 4 },
@@ -169,7 +170,7 @@ export default function HomeScreen() {
       <MotiView
         from={{ opacity: 0, translateY: 20 }}
         animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: 'spring', delay: 180, damping: 22, stiffness: 280 }}
+        transition={{ ...springs.default, delay: 180 }}
         style={[
           styles.expenseLayer,
           Platform.OS === 'ios' ? iosShadow : { elevation: 6 },
@@ -202,7 +203,7 @@ export default function HomeScreen() {
       <MotiView
         from={{ opacity: 0, translateY: 20 }}
         animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: 'spring', delay: 280, damping: 22, stiffness: 280 }}
+        transition={{ ...springs.default, delay: 280 }}
         style={[
           styles.foregroundLayer,
           { paddingBottom: insets.bottom + 16 },
@@ -320,7 +321,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontFamily: fonts.sansBold,
-    fontSize: 18,
+    fontSize: 17,
     color: colors.textPrimary,
   },
   bellBtn: {
@@ -346,7 +347,7 @@ const styles = StyleSheet.create({
   },
   bellDotText: {
     fontFamily: fonts.sansBold,
-    fontSize: 9,
+    fontSize: 10,
     color: '#fff',
     lineHeight: 11,
   },
@@ -360,7 +361,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceCard,
   },
   balanceLabel: {
-    fontFamily: fonts.sans,
+    fontFamily: fonts.sansMedium,
     fontSize: 12,
     color: colors.textMuted,
     marginBottom: 8,
@@ -441,14 +442,14 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   layerCardLabel: {
-    fontFamily: fonts.sans,
+    fontFamily: fonts.sansMedium,
     fontSize: 12,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
   layerCardAmount: {
     fontFamily: fonts.mono,
-    fontSize: 23,
+    fontSize: 22,
     color: colors.textInverse,
     letterSpacing: -0.5,
   },
@@ -480,7 +481,7 @@ const styles = StyleSheet.create({
   },
   seeAllText: {
     fontFamily: fonts.sansMedium,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textMuted,
   },
   divider: {
