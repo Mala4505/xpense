@@ -29,6 +29,7 @@ yarn-error.*
 # macOS
 .DS_Store
 *.pem
+apk
 
 # local env files
 .env*.local
@@ -41,3 +42,20 @@ yarn-error.*
 /android
 docs
 templates
+
+# AI tooling (machine-specific)
+.superpowers/
+.agents/
+skills-lock.json
+
+# Generated design output
+stitch_financial_reports_screen/
+
+# IDE
+.vscode/
+
+# Scratch / test files
+test.html
+
+# Env (catch plain .env too)
+.env

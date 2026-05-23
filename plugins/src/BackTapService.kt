@@ -4,8 +4,10 @@ import android.app.ActivityManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -31,6 +33,13 @@ class BackTapService : Service(), SensorEventListener {
     private val MIN_TAP_GAP_MS = 150L
     private val COOLDOWN_MS = 1500L
 
+    private var receiverRegistered = false
+    private val unlockReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == Intent.ACTION_USER_PRESENT) warmUpOverlay()
+        }
+    }
+
     companion object {
         private const val CHANNEL_ID = "backtap"
         private const val NOTIF_ID = 1001
@@ -54,11 +63,20 @@ class BackTapService : Service(), SensorEventListener {
             sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME)
         }
 
+        if (!receiverRegistered) {
+            registerReceiver(unlockReceiver, IntentFilter(Intent.ACTION_USER_PRESENT))
+            receiverRegistered = true
+        }
+
         return START_STICKY
     }
 
     override fun onDestroy() {
         sensorManager.unregisterListener(this)
+        if (receiverRegistered) {
+            unregisterReceiver(unlockReceiver)
+            receiverRegistered = false
+        }
         super.onDestroy()
     }
 
@@ -98,6 +116,19 @@ class BackTapService : Service(), SensorEventListener {
 
         val intent = Intent(this, OverlayActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        startActivity(intent)
+    }
+
+    private fun warmUpOverlay() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) return
+        if (isAppInForeground()) return
+        val intent = Intent(this, OverlayActivity::class.java)
+        intent.putExtra("WARM_UP_ONLY", true)
+        intent.addFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK or
+            Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS or
+            Intent.FLAG_ACTIVITY_NO_HISTORY
+        )
         startActivity(intent)
     }
 

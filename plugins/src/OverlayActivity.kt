@@ -1,5 +1,6 @@
 package com.mala455.Xpense
 
+import android.os.Bundle
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
@@ -13,6 +14,12 @@ class OverlayActivity : ReactActivity() {
         ReactActivityDelegateWrapper(
             this,
             BuildConfig.IS_NEW_ARCHITECTURE_ENABLED,
-            object : DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled) {}
+            object : DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled) {
+                override fun getLaunchOptions(): Bundle? {
+                    val isWarmUp = this@OverlayActivity.intent?.getBooleanExtra("WARM_UP_ONLY", false) ?: false
+                    if (!isWarmUp) return null
+                    return Bundle().apply { putBoolean("warmUpOnly", true) }
+                }
+            }
         )
 }
