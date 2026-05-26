@@ -174,6 +174,9 @@ export function TransactionRow({
         <Text style={styles.subtitle}>
           {formatTransactionDate(transaction.created_at)} · {transaction.method}
         </Text>
+        {transaction.note ? (
+          <Text style={styles.noteText} numberOfLines={1}>{transaction.note}</Text>
+        ) : null}
       </View>
 
       <View style={styles.amountCol}>
@@ -273,6 +276,11 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sans,
     fontSize: 10,
     color: colors.textMuted,
+  },
+  noteText: {
+    fontFamily: fonts.sans,
+    fontSize: 10,
+    color: colors.textPrimary,
   },
   amountCol: {
     alignItems: 'flex-end',

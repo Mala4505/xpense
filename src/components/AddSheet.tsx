@@ -260,7 +260,7 @@ export function AddSheet() {
     <BottomSheet
       ref={sheetRef}
       index={0}
-      snapPoints={["58%"]}
+      snapPoints={["58%", "92%"]}
       enablePanDownToClose
       onClose={closeSheet}
       backdropComponent={renderBackdrop}
@@ -350,6 +350,23 @@ export function AddSheet() {
           <Text style={styles.currencyLabel}>{currency}</Text>
         </TouchableOpacity>
 
+        {/* ── Notes ── */}
+        <Text style={styles.sectionLabel}>Note</Text>
+        <View style={[styles.inputField, { minHeight: 52 }]}>
+          <Ionicons name="create-outline" size={14} color={colors.textMuted} />
+          <TextInput
+            style={[styles.inputText, { flex: 1, textAlignVertical: 'top' }]}
+            placeholder="Add a note (optional)"
+            placeholderTextColor={colors.textDisabled}
+            value={note}
+            onChangeText={setNote}
+            multiline
+            numberOfLines={2}
+            onFocus={() => sheetRef.current?.snapToIndex(1)}
+            onBlur={() => sheetRef.current?.snapToIndex(0)}
+          />
+        </View>
+
         {/* ── Category grid ── */}
         <Text style={styles.sectionLabel}>Category</Text>
         <View style={styles.categoryGrid}>
@@ -394,21 +411,6 @@ export function AddSheet() {
             />
           </View>
         )}
-
-        {/* ── Notes ── */}
-        <Text style={styles.sectionLabel}>Note</Text>
-        <View style={[styles.inputField, { minHeight: 52 }]}>
-          <Ionicons name="create-outline" size={14} color={colors.textMuted} />
-          <TextInput
-            style={[styles.inputText, { flex: 1, textAlignVertical: 'top' }]}
-            placeholder="Add a note (optional)"
-            placeholderTextColor={colors.textDisabled}
-            value={note}
-            onChangeText={setNote}
-            multiline
-            numberOfLines={2}
-          />
-        </View>
 
         {/* ── Date ── */}
         <Text style={styles.sectionLabel}>Date</Text>
