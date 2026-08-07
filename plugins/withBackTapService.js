@@ -1,4 +1,4 @@
-const { withAndroidManifest, withDangerousMod, withMainActivity, withMainApplication } = require('@expo/config-plugins');
+const { withAndroidManifest, withDangerousMod, withMainApplication } = require('@expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
 
@@ -19,14 +19,27 @@ function withBackTapPermissions(config) {
 
     const app = manifest.application[0];
     if (!app.service) app.service = [];
-    if (!app.service.some((s) => s.$['android:name'] === '.BackTapService')) {
+    const fgsProperty = {
+      $: {
+        'android:name': 'android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE',
+        'android:value': 'back-tap gesture detection',
+      },
+    };
+    const existingService = app.service.find((s) => s.$['android:name'] === '.BackTapService');
+    if (!existingService) {
       app.service.push({
         $: {
           'android:name': '.BackTapService',
           'android:foregroundServiceType': 'specialUse',
           'android:exported': 'false',
         },
+        property: [fgsProperty],
       });
+    } else {
+      if (!existingService.property) existingService.property = [];
+      if (!existingService.property.some((p) => p.$['android:name'] === fgsProperty.$['android:name'])) {
+        existingService.property.push(fgsProperty);
+      }
     }
 
     return config;
@@ -57,29 +70,6 @@ function withBackTapKotlinFile(config) {
   ]);
 }
 
-function withBackTapMainActivity(config) {
-  return withMainActivity(config, (config) => {
-    let contents = config.modResults.contents;
-
-    if (contents.includes('BackTapService')) return config;
-
-    if (!contents.includes('import android.content.Intent')) {
-      contents = contents.replace(
-        'import android.os.Bundle',
-        'import android.content.Intent\nimport android.os.Bundle'
-      );
-    }
-
-    contents = contents.replace(
-      'super.onCreate(null)',
-      'startService(Intent(this, BackTapService::class.java))\n    super.onCreate(null)'
-    );
-
-    config.modResults.contents = contents;
-    return config;
-  });
-}
-
 function withBackTapPackageRegistration(config) {
   return withMainApplication(config, (config) => {
     let contents = config.modResults.contents;
@@ -99,7 +89,6 @@ function withBackTapPackageRegistration(config) {
 module.exports = (config) => {
   config = withBackTapPermissions(config);
   config = withBackTapKotlinFile(config);
-  config = withBackTapMainActivity(config);
   config = withBackTapPackageRegistration(config);
   return config;
 };

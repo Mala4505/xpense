@@ -24,6 +24,7 @@ interface OverlayState {
 interface OverlayStore extends OverlayState {
   openOverlay: () => void;
   openWithPreset: (categoryId: string, flow: 'IN' | 'OUT') => void;
+  openLoanRepayment: (categoryId: string, flow: 'IN' | 'OUT', personName: string) => void;
   closeOverlay: () => void;
   resetOverlay: () => void;
   setOverlayActivityMode: (v: boolean) => void;
@@ -51,6 +52,8 @@ const initialState: OverlayState = {
   flow: 'OUT',
   amount: '',
   note: '',
+  selectedCategoryId: undefined,
+  personName: undefined,
   presetCategoryId: undefined,
   skipCategory: false,
 };
@@ -64,6 +67,17 @@ export const useOverlayStore = create<OverlayStore>((set, get) => ({
 
   openWithPreset: (categoryId, flow) =>
     set({ isOpen: true, step: 'amount', flow, selectedCategoryId: categoryId, presetCategoryId: categoryId, skipCategory: true }),
+
+  openLoanRepayment: (categoryId, flow, personName) =>
+    set({
+      isOpen: true,
+      step: 'amount',
+      flow,
+      selectedCategoryId: categoryId,
+      presetCategoryId: categoryId,
+      personName,
+      skipCategory: true,
+    }),
 
   closeOverlay: () => {
     set({ isOpen: false });

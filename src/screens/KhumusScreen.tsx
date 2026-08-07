@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   RefreshControl,
   ScrollView,
@@ -12,7 +12,8 @@ import { useNavigation } from '@react-navigation/native';
 import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
 import { useSQLiteContext } from 'expo-sqlite';
-import { colors } from '../theme/colors';
+import { useColors } from '../theme/useColors';
+import type { ColorScheme } from '../theme/colors';
 import { fonts } from '../theme/fonts';
 import { formatAmount } from '../utils/currency';
 import { formatTransactionDate, formatTransactionTime } from '../utils/date';
@@ -23,6 +24,8 @@ import { useOverlayStore } from '../stores/overlayStore';
 import { useDataRefreshStore } from '../stores/dataRefreshStore';
 
 export default function KhumusScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const db = useSQLiteContext();
@@ -146,7 +149,7 @@ export default function KhumusScreen() {
           transition={{ type: 'spring', delay: 120, damping: 20, stiffness: 300 }}
         >
           <TouchableOpacity style={styles.payBtn} onPress={() => khumusCatId && openWithPreset(khumusCatId, 'OUT')} activeOpacity={0.85}>
-            <Ionicons name="checkmark-circle-outline" size={18} color={colors.textPrimary} />
+            <Ionicons name="checkmark-circle-outline" size={18} color={colors.textOnYellow} />
             <Text style={styles.payBtnText}>Pay Khumus</Text>
           </TouchableOpacity>
         </MotiView>
@@ -240,7 +243,7 @@ export default function KhumusScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.surfaceBg,
@@ -344,7 +347,7 @@ const styles = StyleSheet.create({
   payBtnText: {
     fontFamily: fonts.sansBold,
     fontSize: 14,
-    color: colors.textPrimary,
+    color: colors.textOnYellow,
   },
   /* Sections */
   section: {

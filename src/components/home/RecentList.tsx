@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
+import type { ColorScheme } from '../../theme/colors';
 import { fonts } from '../../theme/fonts';
 import { TransactionRow } from '../ui/TransactionRow';
 import { RawTransaction } from '../../hooks/useTransactions';
@@ -16,6 +17,8 @@ interface RecentListProps {
 }
 
 function EmptyState() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <MotiView
       from={{ opacity: 0 }}
@@ -38,6 +41,8 @@ export function RecentList({
   onSeeAll,
   onPressTransaction,
 }: RecentListProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <MotiView
       from={{ opacity: 0, translateY: 10 }}
@@ -66,7 +71,7 @@ export function RecentList({
               <TransactionRow
                 transaction={tx}
                 category={categoriesMap.get(tx.category_id)}
-                onPress={() => onPressTransaction?.(tx)}
+                onPress={onPressTransaction}
                 animationIndex={i}
               />
             </View>
@@ -77,7 +82,7 @@ export function RecentList({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   card: {
     backgroundColor: colors.surfaceCard,
     borderRadius: 16,

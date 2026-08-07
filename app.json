@@ -33,7 +33,8 @@
       "./plugins/withBackTapService",
       "./plugins/withQuickTileService",
       "./plugins/withOverlayActivity",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-notifications"
     ],
     "extra": {
       "eas": {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -13,7 +13,8 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
+import type { ColorScheme } from '../../theme/colors';
 import { fonts } from '../../theme/fonts';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { RootStackParamList } from '../../navigation/RootNavigator';
@@ -21,6 +22,8 @@ import { RootStackParamList } from '../../navigation/RootNavigator';
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'OnboardingIdentity'>;
 
 function ProgressBars({ filled }: { filled: number }) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.progressRow}>
       {Array.from({ length: 6 }, (_, i) => (
@@ -28,7 +31,7 @@ function ProgressBars({ filled }: { filled: number }) {
           key={i}
           style={[
             styles.progressBar,
-            { backgroundColor: i < filled ? colors.brandNavy : '#e9ddff' },
+            { backgroundColor: i < filled ? colors.brandNavy : colors.surfaceElevated },
           ]}
         />
       ))}
@@ -37,6 +40,8 @@ function ProgressBars({ filled }: { filled: number }) {
 }
 
 export default function OnboardingIdentityScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavProp>();
   const setUserName = useSettingsStore((s) => s.setUserName);
@@ -98,12 +103,12 @@ export default function OnboardingIdentityScreen() {
             <Ionicons
               name="person-outline"
               size={20}
-              color={focused ? colors.brandNavy : '#c9c4d2'}
+              color={focused ? colors.brandNavy : colors.textDisabled}
             />
             <TextInput
               style={styles.input}
               placeholder="Preferred Name"
-              placeholderTextColor="#c9c4d2"
+              placeholderTextColor={colors.textDisabled}
               value={name}
               onChangeText={setName}
               onFocus={() => setFocused(true)}
@@ -126,14 +131,14 @@ export default function OnboardingIdentityScreen() {
           disabled={!name.trim()}
         >
           <Text style={styles.ctaText}>Continue</Text>
-          <Ionicons name="arrow-forward" size={20} color={colors.brandNavy} />
+          <Ionicons name="arrow-forward" size={20} color={colors.textOnYellow} />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.surfaceBg,
@@ -153,7 +158,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#EEEAF8',
+    backgroundColor: colors.brandPale,
   },
   headerTitle: {
     fontFamily: fonts.sansBold,
@@ -184,7 +189,7 @@ const styles = StyleSheet.create({
   stepLabel: {
     fontFamily: fonts.sansBold,
     fontSize: 12,
-    color: '#797581',
+    color: colors.textMuted,
     letterSpacing: 0.8,
     marginBottom: 16,
   },
@@ -198,7 +203,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: fonts.sans,
     fontSize: 17,
-    color: '#484550',
+    color: colors.textMuted,
     lineHeight: 24,
     marginBottom: 32,
   },
@@ -217,10 +222,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 18,
     borderWidth: 1.5,
-    borderColor: '#D4CAF0',
+    borderColor: colors.surfaceBorder,
   },
   inputWrapFocused: {
-    borderColor: '#9B6EF0',
+    borderColor: colors.brandViolet,
   },
   input: {
     flex: 1,
@@ -246,7 +251,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 16,
     borderRadius: 100,
-    shadowColor: colors.brandNavy,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.1,
     shadowRadius: 16,
@@ -258,6 +263,6 @@ const styles = StyleSheet.create({
   ctaText: {
     fontFamily: fonts.sansBold,
     fontSize: 17,
-    color: colors.brandNavy,
+    color: colors.textOnYellow,
   },
 });

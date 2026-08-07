@@ -12,7 +12,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { MotiView, AnimatePresence } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme/colors';
+import { useColors } from '../theme/useColors';
+import type { ColorScheme } from '../theme/colors';
 import { fonts } from '../theme/fonts';
 import { formatAmount } from '../utils/currency';
 import { formatTransactionDate, formatTransactionTime } from '../utils/date';
@@ -39,6 +40,8 @@ function PendingCard({
   animationIndex: number;
   onMarkDone: () => void;
 }) {
+  const colors = useColors();
+  const pendingStyles = useMemo(() => createPendingStyles(colors), [colors]);
   const db = useSQLiteContext();
   const [marking, setMarking] = useState(false);
   const outstanding = transaction.amount - transaction.paid_amount;
@@ -151,6 +154,8 @@ function SectionHeader({
   currency: string;
   flow: 'IN' | 'OUT';
 }) {
+  const colors = useColors();
+  const pendingStyles = useMemo(() => createPendingStyles(colors), [colors]);
   return (
     <View style={pendingStyles.sectionHeader}>
       <View style={pendingStyles.sectionLeft}>
@@ -185,6 +190,8 @@ function SectionHeader({
 }
 
 export default function PendingScreen() {
+  const colors = useColors();
+  const pendingStyles = useMemo(() => createPendingStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const currency = useSettingsStore((s) => s.defaultCurrency);
@@ -334,7 +341,7 @@ export default function PendingScreen() {
   );
 }
 
-const pendingStyles = StyleSheet.create({
+const createPendingStyles = (colors: ColorScheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.surfaceBg,

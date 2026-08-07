@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
@@ -26,19 +26,34 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
-import { colors } from '../theme/colors';
+import { useColors } from '../theme/useColors';
+import type { ColorScheme } from '../theme/colors';
 import { fonts } from '../theme/fonts';
+import { AnimatedThemeToggle } from '../components/ui/AnimatedThemeToggle';
 import { CURRENCY_LIST } from '../utils/currency';
 import { useCategoriesMap } from '../hooks/useCategories';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useAllTransactions } from '../hooks/useTransactions';
 import { useSQLiteContext } from 'expo-sqlite';
-import { exportTransactionsCSV, exportBackupJSON, readBackupFile, ExportTransaction } from '../utils/export';
+import * as Crypto from 'expo-crypto';
+import {
+  exportTransactionsCSV,
+  exportBackupJSON,
+  readBackupFile,
+  ExportTransaction,
+  ExportCategory,
+  ExportLoan,
+  ExportBudget,
+} from '../utils/export';
+import { getAllCategories } from '../queries/categories';
+import { getAllLoans } from '../queries/loans';
 import { useDataRefreshStore } from '../stores/dataRefreshStore';
 
 // ─── Section header ───────────────────────────────────────────────────────────
 
 function SectionHeader({ title }: { title: string }) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <Text style={styles.sectionHeader}>{title}</Text>
   );
@@ -61,6 +76,8 @@ function SettingsRow({
   onPress?: () => void;
   destructive?: boolean;
 }) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <TouchableOpacity
       style={styles.settingsRow}
@@ -91,6 +108,8 @@ function SettingsRow({
 // ─── Back-Tap Slider ──────────────────────────────────────────────────────────
 
 function BackTapSlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const colors = useColors();
+  const sliderStyles = useMemo(() => createSliderStyles(colors), [colors]);
   const trackWidthRef = useRef(0);
   const startValueRef = useRef(value);
   const valueRef = useRef(value);
@@ -141,6 +160,9 @@ const TAP_THRESHOLD_SETTINGS = 2.4;
 const MIN_TAP_INTERVAL_SETTINGS = 280;
 
 function BackTapTestRow({ sensitivity }: { sensitivity: number }) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const testRowStyles = useMemo(() => createTestRowStyles(colors), [colors]);
   const [state, setState] = useState<'idle' | 'listening' | 'success'>('idle');
   const [tapCount, setTapCount] = useState(0);
   const tapCountRef = useRef(0);
@@ -236,7 +258,7 @@ function BackTapTestRow({ sensitivity }: { sensitivity: number }) {
       )}
       {state === 'success' && (
         <View style={testRowStyles.successBadge}>
-          <Ionicons name="checkmark" size={14} color="white" />
+          <Ionicons name="checkmark" size={14} color={colors.textOnYellow} />
         </View>
       )}
     </View>
@@ -256,6 +278,8 @@ function CurrencyPickerModal({
   onSelect: (code: string) => void;
   onClose: () => void;
 }) {
+  const colors = useColors();
+  const currStyle = useMemo(() => createCurrStyle(colors), [colors]);
   const [search, setSearch] = useState('');
 
   const filtered = CURRENCY_LIST.filter(
@@ -281,10 +305,7 @@ function CurrencyPickerModal({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={currStyle.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={currStyle.overlay} behavior="padding">
         <TouchableOpacity style={{ flex: 1 }} onPress={onClose} />
         <View style={currStyle.sheet}>
           <View style={currStyle.handle} />
@@ -343,6 +364,9 @@ function BudgetAlertRow({
   threshold?: number;
   onThresholdChange?: (v: number) => void;
 }) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const baStyles = useMemo(() => createBaStyles(colors), [colors]);
   const [editing, setEditing] = useState(false);
   const [inputVal, setInputVal] = useState('');
 
@@ -413,6 +437,8 @@ function BudgetAlertRow({
 // ─── Main SettingsScreen ──────────────────────────────────────────────────────
 
 export default function SettingsScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const db = useSQLiteContext();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -476,10 +502,13 @@ export default function SettingsScreen() {
       flow: t.flow,
       amount: t.amount,
       currency: t.currency,
+      categoryId: t.category_id,
       categoryName: catMap.get(t.category_id)?.name ?? 'Unknown',
       status: t.status,
       method: t.method,
       note: t.note ?? undefined,
+      loan_id: t.loan_id ?? null,
+      paid_amount: t.paid_amount,
       khumus_share: t.khumus_share ?? undefined,
       created_at: t.created_at,
     }));
@@ -501,7 +530,39 @@ export default function SettingsScreen() {
     if (backingUp) return;
     setBackingUp(true);
     try {
-      await exportBackupJSON(buildExportTxs());
+      const rawCategories = await getAllCategories(db);
+      const rawLoans = await getAllLoans(db);
+      const rawBudgets = await db.getAllAsync<ExportBudget>(
+        'SELECT id, category_id, month, amount_limit, currency FROM budgets'
+      );
+
+      const categories: ExportCategory[] = rawCategories.map((c) => ({
+        id: c.id,
+        name: c.name,
+        flow_type: c.flow_type,
+        khumus_eligible: c.khumus_eligible,
+        is_loan_type: c.is_loan_type,
+        color: c.color,
+        icon: c.icon,
+        is_system: c.is_system,
+        sort_order: c.sort_order,
+      }));
+      const loans: ExportLoan[] = rawLoans.map((l) => ({
+        id: l.id,
+        type: l.type,
+        person_name: l.person_name,
+        principal: l.principal,
+        currency: l.currency,
+        status: l.status,
+        created_at: l.created_at,
+      }));
+
+      await exportBackupJSON({
+        transactions: buildExportTxs(),
+        categories,
+        loans,
+        budgets: rawBudgets,
+      });
     } catch {
       Alert.alert('Backup Failed', 'Could not create backup file.');
     } finally {
@@ -514,28 +575,144 @@ export default function SettingsScreen() {
     setImportingBackup(true);
     try {
       const backup = await readBackupFile();
-      const cats = await db.getAllAsync<{ id: string; name: string }>('SELECT id, name FROM categories');
-      const catMap = new Map(cats.map((c) => [c.name, c.id]));
-      let imported = 0;
-      let skipped = 0;
-      for (const tx of backup.transactions) {
-        const categoryId = catMap.get(tx.categoryName);
-        if (!categoryId) { skipped++; continue; }
-        await db.runAsync(
-          `INSERT OR IGNORE INTO transactions
-            (id, flow, amount, currency, category_id, status, paid_amount, method, note, loan_id, khumus_share, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [tx.id, tx.flow, tx.amount, tx.currency, categoryId, tx.status, 0, tx.method,
-           tx.note ?? null, null, tx.khumus_share ?? null, tx.created_at, tx.created_at]
+
+      let categoriesCreated = 0;
+      let loansImported = 0;
+      let budgetsImported = 0;
+      let txImported = 0;
+      let txDuplicates = 0;
+      let txSkipped = 0;
+
+      await db.withTransactionAsync(async () => {
+        // ── 1. Categories: reuse by id, fall back to name, else create fresh ──
+        const existingCats = await db.getAllAsync<{ id: string; name: string }>(
+          'SELECT id, name FROM categories'
         );
-        imported++;
-      }
+        const localIdSet = new Set(existingCats.map((c) => c.id));
+        const localNameToId = new Map(existingCats.map((c) => [c.name.trim().toLowerCase(), c.id]));
+        // Maps a backup category's original id -> the local category id it resolves to.
+        const resolvedCategoryId = new Map<string, string>();
+
+        const maxOrderRow = await db.getFirstAsync<{ maxOrder: number }>(
+          'SELECT COALESCE(MAX(sort_order), 0) AS maxOrder FROM categories'
+        );
+        let nextSortOrder = (maxOrderRow?.maxOrder ?? 0) + 1;
+
+        async function createCategoryRow(
+          id: string,
+          name: string,
+          flow_type: string,
+          khumus_eligible: number,
+          is_loan_type: number,
+          color: string,
+          icon: string,
+          is_system: number
+        ): Promise<void> {
+          const now = Date.now();
+          await db.runAsync(
+            `INSERT OR IGNORE INTO categories
+              (id, name, flow_type, khumus_eligible, is_loan_type, color, icon, is_system, sort_order, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [id, name, flow_type, khumus_eligible, is_loan_type, color, icon, is_system, nextSortOrder++, now, now]
+          );
+          localIdSet.add(id);
+          localNameToId.set(name.trim().toLowerCase(), id);
+          categoriesCreated++;
+        }
+
+        for (const cat of backup.categories) {
+          if (localIdSet.has(cat.id)) {
+            resolvedCategoryId.set(cat.id, cat.id);
+            continue;
+          }
+          const byName = localNameToId.get(cat.name.trim().toLowerCase());
+          if (byName) {
+            resolvedCategoryId.set(cat.id, byName);
+            continue;
+          }
+          await createCategoryRow(
+            cat.id, cat.name, cat.flow_type, cat.khumus_eligible,
+            cat.is_loan_type, cat.color, cat.icon, cat.is_system
+          );
+          resolvedCategoryId.set(cat.id, cat.id);
+        }
+
+        // Resolves a transaction's category, creating a minimal fallback
+        // category (legacy v1 backups, or names with no matching id/name
+        // locally) rather than dropping the transaction.
+        async function resolveTxCategoryId(tx: ExportTransaction): Promise<string> {
+          if (tx.categoryId) {
+            const mapped = resolvedCategoryId.get(tx.categoryId);
+            if (mapped) return mapped;
+            if (localIdSet.has(tx.categoryId)) return tx.categoryId;
+          }
+          const byName = localNameToId.get(tx.categoryName.trim().toLowerCase());
+          if (byName) return byName;
+          const id = Crypto.randomUUID();
+          await createCategoryRow(id, tx.categoryName, tx.flow, 0, 0, '#9B8BC4', 'pricetag-outline', 0);
+          return id;
+        }
+
+        // ── 2. Loans: preserve original ids so transactions can re-link ──
+        const existingLoanIds = new Set(
+          (await db.getAllAsync<{ id: string }>('SELECT id FROM loans')).map((l) => l.id)
+        );
+        for (const loan of backup.loans) {
+          const now = Date.now();
+          const result = await db.runAsync(
+            `INSERT OR IGNORE INTO loans (id, type, person_name, principal, currency, status, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [loan.id, loan.type, loan.person_name, loan.principal, loan.currency, loan.status, loan.created_at, now]
+          );
+          if (result.changes > 0) loansImported++;
+        }
+        const validLoanIds = new Set<string>([...existingLoanIds, ...backup.loans.map((l) => l.id)]);
+
+        // ── 3. Budgets ──
+        for (const budget of backup.budgets) {
+          const now = Date.now();
+          const result = await db.runAsync(
+            `INSERT OR IGNORE INTO budgets (id, category_id, month, amount_limit, currency, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [budget.id, budget.category_id, budget.month, budget.amount_limit, budget.currency, now, now]
+          );
+          if (result.changes > 0) budgetsImported++;
+        }
+
+        // ── 4. Transactions (after categories/loans exist to link against) ──
+        for (const tx of backup.transactions) {
+          let categoryId: string;
+          try {
+            categoryId = await resolveTxCategoryId(tx);
+          } catch {
+            txSkipped++;
+            continue;
+          }
+          const loanId = tx.loan_id && validLoanIds.has(tx.loan_id) ? tx.loan_id : null;
+          const result = await db.runAsync(
+            `INSERT OR IGNORE INTO transactions
+              (id, flow, amount, currency, category_id, status, paid_amount, method, note, loan_id, khumus_share, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [tx.id, tx.flow, tx.amount, tx.currency, categoryId, tx.status, tx.paid_amount ?? 0, tx.method,
+             tx.note ?? null, loanId, tx.khumus_share ?? null, tx.created_at, tx.created_at]
+          );
+          if (result.changes > 0) txImported++;
+          else txDuplicates++;
+        }
+      });
+
       useDataRefreshStore.getState().refresh();
+
+      const parts: string[] = [`${txImported} transaction${txImported === 1 ? '' : 's'}`];
+      if (categoriesCreated > 0) parts.push(`${categoriesCreated} new categor${categoriesCreated === 1 ? 'y' : 'ies'}`);
+      if (loansImported > 0) parts.push(`${loansImported} loan${loansImported === 1 ? '' : 's'}`);
+      if (budgetsImported > 0) parts.push(`${budgetsImported} budget${budgetsImported === 1 ? '' : 's'}`);
+      const extras: string[] = [];
+      if (txDuplicates > 0) extras.push(`${txDuplicates} transactions already existed`);
+      if (txSkipped > 0) extras.push(`${txSkipped} transactions skipped`);
       Alert.alert(
         'Import Complete',
-        skipped > 0
-          ? `${imported} transactions imported, ${skipped} skipped (category not found).`
-          : `${imported} transactions imported successfully.`
+        `${parts.join(', ')} imported.` + (extras.length > 0 ? ` ${extras.join(', ')}.` : '')
       );
     } catch (e: any) {
       if (e?.message === 'cancelled') return;
@@ -575,6 +752,12 @@ export default function SettingsScreen() {
               label="Default Currency"
               sublabel={currency}
               onPress={() => setShowCurrencyPicker(true)}
+            />
+            <View style={styles.rowDivider} />
+            <SettingsRow
+              icon="moon-outline"
+              label="Appearance"
+              right={<AnimatedThemeToggle size="sm" />}
             />
             <View style={styles.rowDivider} />
             <SettingsRow
@@ -821,7 +1004,7 @@ export default function SettingsScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.surfaceBg,
@@ -1003,10 +1186,10 @@ const styles = StyleSheet.create({
 
 // ─── Currency Picker styles ───────────────────────────────────────────────────
 
-const currStyle = StyleSheet.create({
+const createCurrStyle = (colors: ColorScheme) => StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(26,16,64,0.4)',
+    backgroundColor: colors.overlayScrim,
     justifyContent: 'flex-end',
   },
   sheet: {
@@ -1079,7 +1262,7 @@ const currStyle = StyleSheet.create({
 
 // ─── Slider styles ────────────────────────────────────────────────────────────
 
-const sliderStyles = StyleSheet.create({
+const createSliderStyles = (colors: ColorScheme) => StyleSheet.create({
   wrap: {
     gap: 6,
     paddingHorizontal: 4,
@@ -1087,7 +1270,7 @@ const sliderStyles = StyleSheet.create({
   track: {
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#e9ddff',
+    backgroundColor: colors.surfaceElevated,
     position: 'relative',
     justifyContent: 'center',
   },
@@ -1104,12 +1287,12 @@ const sliderStyles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: 'white',
+    backgroundColor: colors.surfaceCard,
     borderWidth: 2,
     borderColor: colors.brandNavy,
     marginLeft: -10,
     top: -7,
-    shadowColor: colors.brandNavy,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -1134,7 +1317,7 @@ const sliderStyles = StyleSheet.create({
 
 // ─── Budget Alert Row styles ──────────────────────────────────────────────────
 
-const baStyles = StyleSheet.create({
+const createBaStyles = (colors: ColorScheme) => StyleSheet.create({
   labelRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1171,7 +1354,7 @@ const baStyles = StyleSheet.create({
 
 // ─── Test row styles ──────────────────────────────────────────────────────────
 
-const testRowStyles = StyleSheet.create({
+const createTestRowStyles = (colors: ColorScheme) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1203,12 +1386,12 @@ const testRowStyles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     borderWidth: 1.5,
-    borderColor: '#d0c4f0',
+    borderColor: colors.surfaceBorder,
     backgroundColor: 'transparent',
   },
   dotFilled: {
-    backgroundColor: '#7042c3',
-    borderColor: '#7042c3',
+    backgroundColor: colors.brandPurple,
+    borderColor: colors.brandPurple,
   },
   successBadge: {
     width: 26,

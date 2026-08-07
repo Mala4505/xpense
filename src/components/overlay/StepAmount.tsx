@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,7 +8,8 @@ import {
   Pressable,
 } from 'react-native';
 import { MotiView } from 'moti';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
+import type { ColorScheme } from '../../theme/colors';
 import { fonts } from '../../theme/fonts';
 import { useOverlayStore } from '../../stores/overlayStore';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -18,6 +19,8 @@ interface StepAmountProps {
 }
 
 export function StepAmount({ onClose }: StepAmountProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { flow, amount, setFlow, setAmount, nextStep } = useOverlayStore();
   const currency = useSettingsStore((s) => s.defaultCurrency);
   const inputRef = useRef<TextInput>(null);
@@ -97,7 +100,7 @@ export function StepAmount({ onClose }: StepAmountProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   container: {
     gap: 20,
   },
@@ -144,7 +147,7 @@ const styles = StyleSheet.create({
   cancelBtn: {
     flex: 1,
     height: 44,
-    backgroundColor: '#F0EAF8',
+    backgroundColor: colors.brandPale,
     borderRadius: 100,
     justifyContent: 'center',
     alignItems: 'center',

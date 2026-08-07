@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import {
   Platform,
   RefreshControl,
@@ -13,7 +13,8 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
-import { colors } from '../theme/colors';
+import { useColors } from '../theme/useColors';
+import type { ColorScheme } from '../theme/colors';
 import { fonts } from '../theme/fonts';
 import { springs } from '../theme/springs';
 import { formatAmount } from '../utils/currency';
@@ -33,20 +34,24 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { useNotificationsStore } from '../stores/notificationsStore';
 import { useDataRefreshStore } from '../stores/dataRefreshStore';
 import { NotificationsSheet } from '../components/home/NotificationsSheet';
+import { AnimatedThemeToggle } from '../components/ui/AnimatedThemeToggle';
 import { RootStackParamList } from '../navigation/RootNavigator';
 
 type HomeNavProp = NativeStackNavigationProp<RootStackParamList>;
 
 // Upward-facing shadow on iOS replicates the HTML layered-shadow depth effect.
 // Android uses increasing elevation values to maintain correct stacking order.
-const iosShadow = {
-  shadowColor: colors.brandNavy,
+const createIosShadow = (colors: ColorScheme) => ({
+  shadowColor: colors.shadow,
   shadowOffset: { width: 0, height: 4 },
   shadowOpacity: 0.12,
   shadowRadius: 16,
-};
+});
 
 export default function HomeScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const iosShadow = useMemo(() => createIosShadow(colors), [colors]);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<HomeNavProp>();
 
@@ -104,14 +109,17 @@ export default function HomeScreen() {
           </View>
           <Text style={styles.userName}>{displayName}</Text>
         </View>
-        <TouchableOpacity style={styles.bellBtn} onPress={() => setShowNotifications(true)}>
-          <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
-          {unreadCount > 0 && (
-            <View style={styles.bellDot}>
-              <Text style={styles.bellDotText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        <View style={styles.topNavActions}>
+          <AnimatedThemeToggle size="sm" />
+          <TouchableOpacity style={styles.bellBtn} onPress={() => setShowNotifications(true)}>
+            <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
+            {unreadCount > 0 && (
+              <View style={styles.bellDot}>
+                <Text style={styles.bellDotText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
         <NotificationsSheet visible={showNotifications} onClose={() => setShowNotifications(false)} />
       </View>
 
@@ -278,10 +286,10 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.surfaceCard,
+    backgroundColor: colors.surfaceBg,
     overflow: 'hidden',
   },
   scrollView: {
@@ -299,6 +307,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 14,
     backgroundColor: colors.surfaceCard,
+  },
+  topNavActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   avatarRow: {
     flexDirection: 'row',
@@ -414,7 +427,7 @@ const styles = StyleSheet.create({
   // ── Foreground Layer ──────────────────────────────────────────────────────
   // Pulls 68px into expense bottom padding; sits on top as the content card.
   foregroundLayer: {
-    backgroundColor: colors.surfaceCard,
+    backgroundColor: colors.surfaceBg,
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     paddingTop: 24,

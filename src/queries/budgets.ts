@@ -86,3 +86,10 @@ export async function deleteBudget(
 ): Promise<void> {
   await db.runAsync(`DELETE FROM budgets WHERE id = ?`, [id]);
 }
+
+export async function deleteBudgetsByCategory(
+  db: SQLite.SQLiteDatabase,
+  categoryId: string
+): Promise<void> {
+  await db.runAsync(`DELETE FROM budgets WHERE category_id = ?`, [categoryId]);
+}

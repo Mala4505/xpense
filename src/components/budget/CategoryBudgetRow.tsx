@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
+import type { ColorScheme } from '../../theme/colors';
 import { fonts } from '../../theme/fonts';
 import { formatAmount } from '../../utils/currency';
 import type { BudgetEntry } from '../../stores/budgetStore';
@@ -16,13 +17,13 @@ interface CategoryBudgetRowProps {
   onPress: () => void;
 }
 
-function barColor(pct: number): string {
+function barColor(pct: number, colors: ColorScheme): string {
   if (pct >= 90) return colors.expense;
   if (pct >= 75) return colors.khumus;
   return colors.income;
 }
 
-function badgeBg(pct: number): string {
+function badgeBg(pct: number, colors: ColorScheme): string {
   if (pct >= 90) return colors.expenseBg;
   if (pct >= 75) return colors.khumusBg;
   return colors.incomeBg;
@@ -36,8 +37,10 @@ export function CategoryBudgetRow({
   index,
   onPress,
 }: CategoryBudgetRowProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const pct = Math.min(budget.percentUsed, 100);
-  const barCol = barColor(budget.percentUsed);
+  const barCol = barColor(budget.percentUsed, colors);
 
   return (
     <MotiView
@@ -53,7 +56,7 @@ export function CategoryBudgetRow({
         <View style={styles.mid}>
           <View style={styles.topRow}>
             <Text style={styles.catName} numberOfLines={1}>{categoryName}</Text>
-            <View style={[styles.badge, { backgroundColor: badgeBg(budget.percentUsed) }]}>
+            <View style={[styles.badge, { backgroundColor: badgeBg(budget.percentUsed, colors) }]}>
               <Text style={[styles.badgeText, { color: barCol }]}>
                 {Math.round(budget.percentUsed)}%
               </Text>
@@ -85,7 +88,7 @@ export function CategoryBudgetRow({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',

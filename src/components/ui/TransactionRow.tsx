@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -15,7 +15,8 @@ import Animated, {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
+import type { ColorScheme } from '../../theme/colors';
 import { fonts } from '../../theme/fonts';
 import { springs } from '../../theme/springs';
 import { formatAmount } from '../../utils/currency';
@@ -28,10 +29,10 @@ import { RawCategory } from '../../hooks/useCategories';
 interface TransactionRowProps {
   transaction: RawTransaction;
   category?: RawCategory;
-  onPress?: () => void;
-  onLongPress?: () => void;
-  onDelete?: () => void;
-  onEdit?: () => void;
+  onPress?: (transaction: RawTransaction) => void;
+  onLongPress?: (transaction: RawTransaction) => void;
+  onDelete?: (transaction: RawTransaction) => void;
+  onEdit?: (transaction: RawTransaction) => void;
   animationIndex?: number;
   style?: ViewStyle;
 }
@@ -49,6 +50,8 @@ function SwipeableRow({
   onDelete: () => void;
   onEdit: () => void;
 }) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const translateX = useSharedValue(0);
   const isOpen = useSharedValue<'none' | 'delete' | 'edit'>('none');
 
@@ -127,7 +130,7 @@ function SwipeableRow({
   );
 }
 
-export function TransactionRow({
+export const TransactionRow = React.memo(function TransactionRow({
   transaction,
   category,
   onPress,
@@ -137,6 +140,8 @@ export function TransactionRow({
   animationIndex = 0,
   style,
 }: TransactionRowProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const isLoan = !!transaction.loan_id;
   const amountColor = isLoan
     ? colors.loan
@@ -151,8 +156,8 @@ export function TransactionRow({
   const rowContent = (
     <TouchableOpacity
       style={[styles.row, style]}
-      onPress={onPress}
-      onLongPress={onLongPress}
+      onPress={onPress ? () => onPress(transaction) : undefined}
+      onLongPress={onLongPress ? () => onLongPress(transaction) : undefined}
       activeOpacity={0.7}
     >
       <CategoryIcon name={categoryName} color={categoryColor} size={34} />
@@ -200,16 +205,19 @@ export function TransactionRow({
 
   if (onDelete || onEdit) {
     return (
-      <SwipeableRow onDelete={onDelete ?? (() => {})} onEdit={onEdit ?? (() => {})}>
+      <SwipeableRow
+        onDelete={() => onDelete?.(transaction)}
+        onEdit={() => onEdit?.(transaction)}
+      >
         {wrappedContent}
       </SwipeableRow>
     );
   }
 
   return wrappedContent;
-}
+});
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   swipeContainer: {
     overflow: 'hidden',
     position: 'relative',

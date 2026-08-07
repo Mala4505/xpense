@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, TextStyle } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
 import { fonts } from '../../theme/fonts';
 import { formatAmount } from '../../utils/currency';
 
@@ -20,6 +20,7 @@ const SIZE_MAP = {
 };
 
 export function AmountText({ amount, flow, currency, size = 'md', style }: AmountTextProps) {
+  const colors = useColors();
   const color = flow === 'IN' ? colors.income : colors.expense;
   const prefix = flow === 'IN' ? '+' : '−';
   const fontSize = SIZE_MAP[size];

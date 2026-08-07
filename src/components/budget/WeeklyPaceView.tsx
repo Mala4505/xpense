@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useFocusEffect } from '@react-navigation/native';
@@ -16,7 +16,8 @@ import {
 } from 'date-fns';
 import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
+import type { ColorScheme } from '../../theme/colors';
 import { fonts } from '../../theme/fonts';
 import { formatAmount } from '../../utils/currency';
 import { useBudgetStore } from '../../stores/budgetStore';
@@ -35,6 +36,8 @@ interface WeeklyPaceViewProps {
 }
 
 export function WeeklyPaceView({ onBack }: WeeklyPaceViewProps) {
+  const colors = useColors();
+  const wStyles = useMemo(() => createWStyles(colors), [colors]);
   const db = useSQLiteContext();
   const currency = useSettingsStore((s) => s.defaultCurrency);
   const budgets = useBudgetStore((s) => s.budgets);
@@ -50,6 +53,8 @@ export function WeeklyPaceView({ onBack }: WeeklyPaceViewProps) {
   const totalSpentRef = useRef(totalSpent);
   totalSpentRef.current = totalSpent;
 
+  const requestIdRef = useRef(0);
+
   useEffect(() => {
     buildWeeks();
   }, [totalSpent, monthLimit]);
@@ -61,6 +66,7 @@ export function WeeklyPaceView({ onBack }: WeeklyPaceViewProps) {
   );
 
   async function buildWeeks() {
+    const requestId = ++requestIdRef.current;
     const now = new Date();
     const monthStart = startOfMonth(now);
     const monthEnd = endOfMonth(now);
@@ -97,6 +103,7 @@ export function WeeklyPaceView({ onBack }: WeeklyPaceViewProps) {
           [effStart.getTime(), endTs]
         );
         actual = rows[0]?.total ?? 0;
+        if (requestIdRef.current !== requestId) return;
       }
 
       const endDay = format(effEnd, 'd');
@@ -112,11 +119,12 @@ export function WeeklyPaceView({ onBack }: WeeklyPaceViewProps) {
       weekStart = addWeeks(weekStart, 1);
     }
 
+    if (requestIdRef.current !== requestId) return;
     setWeeks(result);
   }
 
   const now = new Date();
-  const daysLeft = differenceInDays(endOfMonth(now), now);
+  const daysLeft = Math.max(1, differenceInDays(endOfMonth(now), now));
   const onTrack = monthLimit === 0 || projectedMonthEnd <= monthLimit;
 
   return (
@@ -233,7 +241,7 @@ export function WeeklyPaceView({ onBack }: WeeklyPaceViewProps) {
   );
 }
 
-const wStyles = StyleSheet.create({
+const createWStyles = (colors: ColorScheme) => StyleSheet.create({
   backRow: {
     flexDirection: 'row',
     alignItems: 'center',

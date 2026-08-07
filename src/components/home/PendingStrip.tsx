@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { MotiView } from 'moti';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
+import type { ColorScheme } from '../../theme/colors';
 import { fonts } from '../../theme/fonts';
 import { formatAmount } from '../../utils/currency';
 
@@ -13,6 +14,8 @@ interface PendingStripProps {
 }
 
 export function PendingStrip({ count, total, currency, onPress }: PendingStripProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   if (count === 0) return null;
 
   return (
@@ -44,11 +47,11 @@ export function PendingStrip({ count, total, currency, onPress }: PendingStripPr
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   strip: {
     backgroundColor: colors.pendingBg,
     borderWidth: 1,
-    borderColor: '#BFDBFE',
+    borderColor: colors.pending,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 14,
@@ -75,7 +78,7 @@ const styles = StyleSheet.create({
   countText: {
     fontFamily: fonts.sansBold,
     fontSize: 12,
-    color: '#1D4ED8',
+    color: colors.pending,
   },
   totalText: {
     fontFamily: fonts.sans,

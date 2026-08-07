@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import {
   Animated,
   StyleSheet,
@@ -9,12 +9,15 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
+import type { ColorScheme } from '../../theme/colors';
 import { fonts } from '../../theme/fonts';
 import { useSettingsStore } from '../../stores/settingsStore';
 
 // All 6 bars filled — onboarding complete
 function ProgressBars() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.progressRow}>
       {Array.from({ length: 6 }, (_, i) => (
@@ -26,10 +29,14 @@ function ProgressBars() {
 
 // Confetti dot component
 function ConfettiDot({ color, style }: { color: string; style: object }) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return <View style={[styles.confettiDot, { backgroundColor: color }, style]} />;
 }
 
 export default function OnboardingLaunchpadScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const setHasCompletedOnboarding = useSettingsStore((s) => s.setHasCompletedOnboarding);
   const userName = useSettingsStore((s) => s.userName);
@@ -69,7 +76,7 @@ export default function OnboardingLaunchpadScreen() {
           <ConfettiDot color={colors.brandPurple} style={styles.confetti2} />
           <ConfettiDot color={colors.income} style={styles.confetti3} />
           <ConfettiDot color={colors.brandYellow} style={styles.confetti4} />
-          <ConfettiDot color="#aa7dff" style={styles.confetti5} />
+          <ConfettiDot color={colors.accentLavender} style={styles.confetti5} />
           <ConfettiDot color={colors.income} style={styles.confetti6} />
 
           {/* Center circle */}
@@ -100,17 +107,17 @@ export default function OnboardingLaunchpadScreen() {
       >
         <TouchableOpacity style={styles.ctaButton} onPress={handleStart} activeOpacity={0.9}>
           <Text style={styles.ctaText}>Start budgeting</Text>
-          <Ionicons name="arrow-forward" size={24} color={colors.brandNavy} />
+          <Ionicons name="arrow-forward" size={24} color={colors.textOnYellow} />
         </TouchableOpacity>
       </MotiView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fef7ff',
+    backgroundColor: colors.surfaceBg,
     paddingHorizontal: 20,
     justifyContent: 'space-between',
   },
@@ -146,23 +153,23 @@ const styles = StyleSheet.create({
     width: 220,
     height: 220,
     borderRadius: 110,
-    backgroundColor: '#f3eaff',
+    backgroundColor: colors.brandPale,
     opacity: 0.6,
   },
   centerCircle: {
     width: 160,
     height: 160,
     borderRadius: 80,
-    backgroundColor: 'white',
+    backgroundColor: colors.surfaceCard,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: colors.brandNavy,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
     shadowRadius: 30,
     elevation: 8,
     borderWidth: 4,
-    borderColor: 'white',
+    borderColor: colors.surfaceCard,
   },
 
   // Confetti
@@ -193,7 +200,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: fonts.sans,
     fontSize: 17,
-    color: '#484550',
+    color: colors.textMuted,
     textAlign: 'center',
     maxWidth: 280,
   },
@@ -208,7 +215,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 14,
-    shadowColor: colors.brandNavy,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 14,
@@ -217,6 +224,6 @@ const styles = StyleSheet.create({
   ctaText: {
     fontFamily: fonts.sansBold,
     fontSize: 22,
-    color: colors.brandNavy,
+    color: colors.textOnYellow,
   },
 });

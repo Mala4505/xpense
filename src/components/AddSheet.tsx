@@ -24,15 +24,24 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useAddSheetStore } from '../stores/addSheetStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useToastStore } from '../stores/toastStore';
-import { colors } from '../theme/colors';
+import { useColors } from '../theme/useColors';
+import type { ColorScheme } from '../theme/colors';
 import { fonts } from '../theme/fonts';
 import { formatAmount } from '../utils/currency';
 import { useNotificationsStore } from '../stores/notificationsStore';
 import { createTransaction, updateTransaction } from '../queries/transactions';
-import { createLoan } from '../queries/loans';
+import { createLoan, findOldestOpenLoan, refreshLoanStatus, updateLoanPrincipal } from '../queries/loans';
 import { RawCategory, RawTransaction } from '../db/types';
 import { Flow, TransactionStatus } from '../types';
 import { useDataRefreshStore } from '../stores/dataRefreshStore';
+import { useNoteSuggestions } from '../hooks/useNoteSuggestions';
+import { NoteSuggestions } from './ui/NoteSuggestions';
+import {
+  LOAN_TYPE_BY_CATEGORY,
+  LOAN_FLOW_BY_CATEGORY,
+  LOAN_CREATES_NEW_RECORD,
+  LOAN_IS_REPAYMENT,
+} from '../utils/loanCategories';
 
 
 const STATUS_OPTIONS: { key: TransactionStatus; label: string }[] = [
@@ -42,14 +51,9 @@ const STATUS_OPTIONS: { key: TransactionStatus; label: string }[] = [
   { key: 'cancelled', label: 'Cancelled' },
 ];
 
-const LOAN_FLOW: Record<string, Flow> = {
-  'Loan Given': 'OUT',
-  'Loan Received': 'IN',
-  'Loan Repaid': 'IN',
-  'I Repaid Loan': 'OUT',
-};
-
 export function AddSheet() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const sheetRef = useRef<BottomSheet>(null);
   const db = useSQLiteContext();
   const { editTransactionId, closeSheet, isOpen } = useAddSheetStore();
@@ -70,6 +74,7 @@ export function AddSheet() {
   const [saving, setSaving] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [toggleWidth, setToggleWidth] = useState(0);
+  const [originalTx, setOriginalTx] = useState<RawTransaction | null>(null);
 
   const selectedCategory = useMemo(
     () => categories.find((c) => c.id === selectedCategoryId) ?? null,
@@ -84,6 +89,8 @@ export function AddSheet() {
 
   const numericAmount = parseFloat(amount) || 0;
   const canSave = numericAmount > 0 && !!selectedCategoryId;
+
+  const noteSuggestions = useNoteSuggestions(selectedCategoryId);
 
   const dateLabel = useMemo(() => {
     if (!selectedDate || isNaN(selectedDate.getTime())) {
@@ -104,23 +111,27 @@ export function AddSheet() {
   // Auto-set flow for loan categories
   useEffect(() => {
     if (!selectedCategory || !isLoanCategory) return;
-    const locked = LOAN_FLOW[selectedCategory.name];
+    const locked = LOAN_FLOW_BY_CATEGORY[selectedCategory.name];
     if (locked) setFlow(locked);
   }, [selectedCategory, isLoanCategory]);
 
   // Load categories + prefill when sheet opens
   useEffect(() => {
     if (!isOpen) return;
+    let active = true;
 
     db.getAllAsync<RawCategory>('SELECT * FROM categories ORDER BY sort_order ASC').then(
-      (cats) => setCategories(cats.filter((c) => c.is_loan_type === 1 || pinnedCategoryNames.includes(c.name)))
+      (cats) => {
+        if (active) setCategories(cats.filter((c) => c.is_loan_type === 1 || pinnedCategoryNames.includes(c.name)));
+      }
     );
 
     if (editTransactionId) {
       db.getFirstAsync<RawTransaction>('SELECT * FROM transactions WHERE id = ?', [
         editTransactionId,
       ]).then((tx) => {
-        if (!tx) return;
+        if (!active || !tx) return;
+        setOriginalTx(tx);
         setFlow(tx.flow);
         setAmount(
           typeof tx.amount === 'number'
@@ -138,11 +149,12 @@ export function AddSheet() {
             'SELECT person_name FROM loans WHERE id = ?',
             [tx.loan_id]
           ).then((loan) => {
-            if (loan) setPersonName(loan.person_name);
+            if (active && loan) setPersonName(loan.person_name);
           });
         }
       });
     } else {
+      setOriginalTx(null);
       setFlow('OUT');
       setAmount('');
       setSelectedCategoryId(null);
@@ -151,6 +163,10 @@ export function AddSheet() {
       setPersonName('');
       setSelectedDate(new Date());
     }
+
+    return () => {
+      active = false;
+    };
   }, [isOpen, editTransactionId]);
 
   function handleFlowChange(newFlow: Flow) {
@@ -193,6 +209,52 @@ export function AddSheet() {
       const amountLabel = `${prefix}${currency} ${formatAmount(numericAmount)}`;
 
       if (editTransactionId) {
+        const oldLoanId = originalTx?.loan_id ?? null;
+        const wasLoanLinked = !!oldLoanId;
+        const categoryChanged = originalTx?.category_id !== selectedCategoryId;
+
+        let loanIdPatch: string | null | undefined;
+        let paidAmountPatch: number | undefined;
+        const loansToRefresh = new Set<string>();
+
+        if (wasLoanLinked && !categoryChanged && isLoanCategory) {
+          // Same loan-linked transaction, category unchanged — recompute against its existing loan.
+          if (LOAN_CREATES_NEW_RECORD.has(selectedCategory!.name)) {
+            await updateLoanPrincipal(db, oldLoanId!, numericAmount);
+          } else if (LOAN_IS_REPAYMENT.has(selectedCategory!.name)) {
+            paidAmountPatch = numericAmount;
+          }
+          loansToRefresh.add(oldLoanId!);
+        } else {
+          if (wasLoanLinked) {
+            // Category changed away from its original loan role — unlink from the old loan.
+            loanIdPatch = null;
+            paidAmountPatch = 0;
+            loansToRefresh.add(oldLoanId!);
+          }
+          if (isLoanCategory && personName.trim()) {
+            if (LOAN_CREATES_NEW_RECORD.has(selectedCategory!.name)) {
+              loanIdPatch = await createLoan(db, {
+                type: LOAN_TYPE_BY_CATEGORY[selectedCategory!.name],
+                person_name: personName.trim(),
+                principal: numericAmount,
+                currency,
+              });
+            } else if (LOAN_IS_REPAYMENT.has(selectedCategory!.name)) {
+              const openLoan = await findOldestOpenLoan(
+                db,
+                LOAN_TYPE_BY_CATEGORY[selectedCategory!.name],
+                personName.trim()
+              );
+              if (openLoan) {
+                loanIdPatch = openLoan.id;
+                paidAmountPatch = numericAmount;
+              }
+            }
+            if (loanIdPatch) loansToRefresh.add(loanIdPatch);
+          }
+        }
+
         await updateTransaction(db, editTransactionId, {
           flow,
           amount: numericAmount,
@@ -200,7 +262,14 @@ export function AddSheet() {
           note: note.trim() || null,
           status,
           created_at: buildTimestamp(selectedDate),
+          ...(loanIdPatch !== undefined ? { loan_id: loanIdPatch } : {}),
+          ...(paidAmountPatch !== undefined ? { paid_amount: paidAmountPatch } : {}),
         });
+
+        for (const loanId of loansToRefresh) {
+          await refreshLoanStatus(db, loanId);
+        }
+
         showToast('Transaction updated', amountLabel);
         useNotificationsStore.getState().addNotification({
           type: 'transaction',
@@ -209,14 +278,26 @@ export function AddSheet() {
         });
       } else {
         let loan_id: string | undefined;
+        let repaymentAmount: number | undefined;
         if (isLoanCategory && personName.trim()) {
-          const loanType = flow === 'OUT' ? 'lent' : 'borrowed';
-          loan_id = await createLoan(db, {
-            type: loanType,
-            person_name: personName.trim(),
-            principal: numericAmount,
-            currency,
-          });
+          if (LOAN_CREATES_NEW_RECORD.has(selectedCategory!.name)) {
+            loan_id = await createLoan(db, {
+              type: LOAN_TYPE_BY_CATEGORY[selectedCategory!.name],
+              person_name: personName.trim(),
+              principal: numericAmount,
+              currency,
+            });
+          } else if (LOAN_IS_REPAYMENT.has(selectedCategory!.name)) {
+            const openLoan = await findOldestOpenLoan(
+              db,
+              LOAN_TYPE_BY_CATEGORY[selectedCategory!.name],
+              personName.trim()
+            );
+            if (openLoan) {
+              loan_id = openLoan.id;
+              repaymentAmount = numericAmount;
+            }
+          }
         }
         await createTransaction(db, {
           flow,
@@ -227,8 +308,12 @@ export function AddSheet() {
           method: 'cash',
           note: note.trim() || undefined,
           loan_id,
+          paid_amount: repaymentAmount,
           created_at: buildTimestamp(selectedDate),
         });
+        if (loan_id && repaymentAmount) {
+          await refreshLoanStatus(db, loan_id);
+        }
         showToast('Transaction added', amountLabel);
         useNotificationsStore.getState().addNotification({
           type: 'transaction',
@@ -367,6 +452,12 @@ export function AddSheet() {
           />
         </View>
 
+        <NoteSuggestions
+          suggestions={noteSuggestions}
+          currentValue={note}
+          onSelect={setNote}
+        />
+
         {/* ── Category grid ── */}
         <Text style={styles.sectionLabel}>Category</Text>
         <View style={styles.categoryGrid}>
@@ -465,7 +556,7 @@ export function AddSheet() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   content: {
     paddingHorizontal: 16,
     paddingTop: 8,

@@ -13,7 +13,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme/colors';
+import { useColors } from '../theme/useColors';
+import type { ColorScheme } from '../theme/colors';
 import { fonts } from '../theme/fonts';
 import { springs } from '../theme/springs';
 import { TransactionRow } from '../components/ui/TransactionRow';
@@ -23,6 +24,7 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { groupTransactionsByDate } from '../utils/date';
 import { useSQLiteContext } from 'expo-sqlite';
 import { deleteTransaction } from '../queries/transactions';
+import { refreshLoanStatus } from '../queries/loans';
 import { useAddSheetStore } from '../stores/addSheetStore';
 import { useDataRefreshStore } from '../stores/dataRefreshStore';
 
@@ -39,6 +41,8 @@ function FilterChip({
   active: boolean;
   onPress: () => void;
 }) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <MotiView
       animate={{ scale: active ? 1 : 0.95, opacity: active ? 1 : 0.75 }}
@@ -61,6 +65,8 @@ interface Section {
 }
 
 export default function HistoryScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const db = useSQLiteContext();
   const currency = useSettingsStore((s) => s.defaultCurrency);
@@ -111,7 +117,8 @@ export default function HistoryScreen() {
     }));
   }, [filtered]);
 
-  function handleDelete(txId: string) {
+  const handleDelete = useCallback((tx: RawTransaction) => {
+    const txId = tx.id;
     Alert.alert('Delete Transaction', 'This cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -121,6 +128,9 @@ export default function HistoryScreen() {
           setDeletedIds((prev) => new Set([...prev, txId]));
           try {
             await deleteTransaction(db, txId);
+            if (tx.loan_id) {
+              await refreshLoanStatus(db, tx.loan_id);
+            }
           } catch (e) {
             setDeletedIds((prev) => { const s = new Set(prev); s.delete(txId); return s; });
             Alert.alert('Error', 'Could not delete transaction.');
@@ -128,7 +138,28 @@ export default function HistoryScreen() {
         },
       },
     ]);
-  }
+  }, [db]);
+
+  const handleEdit = useCallback(
+    (tx: RawTransaction) => openSheet(tx.id),
+    [openSheet]
+  );
+
+  const renderItem = useCallback(
+    ({ item, index }: { item: RawTransaction; index: number }) => (
+      <View style={styles.rowWrap}>
+        <TransactionRow
+          transaction={item}
+          category={categoriesMap.get(item.category_id)}
+          onDelete={handleDelete}
+          onEdit={handleEdit}
+          animationIndex={index}
+        />
+        <View style={styles.rowDivider} />
+      </View>
+    ),
+    [styles, categoriesMap, handleDelete, handleEdit]
+  );
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -211,18 +242,7 @@ export default function HistoryScreen() {
               <Text style={styles.sectionHeaderText}>{section.title}</Text>
             </View>
           )}
-          renderItem={({ item, index }) => (
-            <View style={styles.rowWrap}>
-              <TransactionRow
-                transaction={item}
-                category={categoriesMap.get(item.category_id)}
-                onDelete={() => handleDelete(item.id)}
-                onEdit={() => openSheet(item.id)}
-                animationIndex={index}
-              />
-              <View style={styles.rowDivider} />
-            </View>
-          )}
+          renderItem={renderItem}
           ItemSeparatorComponent={() => null}
         />
       )}
@@ -230,7 +250,7 @@ export default function HistoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.surfaceBg,

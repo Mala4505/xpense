@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
   Modal,
   ScrollView,
@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
+import type { ColorScheme } from '../../theme/colors';
 import { fonts } from '../../theme/fonts';
 import { useNotificationsStore, AppNotification } from '../../stores/notificationsStore';
 
@@ -30,6 +31,8 @@ function timeAgo(ts: number): string {
 }
 
 function NotificationItem({ item }: { item: AppNotification }) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={[styles.item, !item.read && styles.itemUnread]}>
       <View style={styles.itemIconWrap}>
@@ -49,6 +52,8 @@ function NotificationItem({ item }: { item: AppNotification }) {
 }
 
 export function NotificationsSheet({ visible, onClose }: Props) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { notifications, markAllRead, clearAll } = useNotificationsStore();
 
@@ -102,7 +107,7 @@ export function NotificationsSheet({ visible, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',

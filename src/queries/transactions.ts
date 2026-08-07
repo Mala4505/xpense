@@ -60,6 +60,26 @@ export async function updateTransaction(
   if (patch.note !== undefined)        { fields.push('note = ?');        values.push(patch.note ?? null); }
   if (patch.loan_id !== undefined)     { fields.push('loan_id = ?');     values.push(patch.loan_id ?? null); }
   if (patch.created_at !== undefined)  { fields.push('created_at = ?');  values.push(patch.created_at); }
+  if (patch.amount !== undefined || patch.category_id !== undefined) {
+    const current = await db.getFirstAsync<{ amount: number; category_id: string }>(
+      `SELECT amount, category_id FROM transactions WHERE id = ?`,
+      [id]
+    );
+    const effectiveAmount = patch.amount ?? current?.amount ?? 0;
+    const effectiveCategoryId = patch.category_id ?? current?.category_id ?? null;
+    const cat = effectiveCategoryId
+      ? await db.getFirstAsync<{ khumus_eligible: number; is_loan_type: number }>(
+          `SELECT khumus_eligible, is_loan_type FROM categories WHERE id = ?`,
+          [effectiveCategoryId]
+        )
+      : null;
+    const khumusShare =
+      cat && cat.is_loan_type === 0 && cat.khumus_eligible === 1
+        ? effectiveAmount / 5
+        : null;
+    fields.push('khumus_share = ?');
+    values.push(khumusShare);
+  }
   if (fields.length === 0) return;
   fields.push('updated_at = ?');
   values.push(Date.now(), id);
@@ -113,4 +133,21 @@ export async function getRecentTransactions(
     `SELECT * FROM transactions ORDER BY created_at DESC LIMIT ?`,
     [limit]
   );
+}
+
+export async function getTopNotesForCategory(
+  db: SQLiteDatabase,
+  categoryId: string,
+  limit: number = 6
+): Promise<string[]> {
+  const rows = await db.getAllAsync<{ note: string }>(
+    `SELECT note, COUNT(*) as cnt FROM transactions
+     WHERE category_id = ? AND note IS NOT NULL AND TRIM(note) != ''
+     GROUP BY note COLLATE NOCASE
+     HAVING cnt > 1
+     ORDER BY cnt DESC, MAX(created_at) DESC
+     LIMIT ?`,
+    [categoryId, limit]
+  );
+  return rows.map((r) => r.note);
 }

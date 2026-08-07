@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   StyleSheet,
@@ -8,37 +8,35 @@ import {
   View,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
+import type { ColorScheme } from '../../theme/colors';
 import { fonts } from '../../theme/fonts';
 import { useOverlayStore } from '../../stores/overlayStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useToastStore } from '../../stores/toastStore';
 import { useSQLiteContext } from 'expo-sqlite';
 import { createTransaction } from '../../queries/transactions';
-import { createLoan } from '../../queries/loans';
+import { createLoan, findOldestOpenLoan, refreshLoanStatus } from '../../queries/loans';
 import { getCategoryById } from '../../queries/categories';
 import { formatAmount } from '../../utils/currency';
 import { useNotificationsStore } from '../../stores/notificationsStore';
+import { useNoteSuggestions } from '../../hooks/useNoteSuggestions';
+import { NoteSuggestions } from '../ui/NoteSuggestions';
+import { useDataRefreshStore } from '../../stores/dataRefreshStore';
+import {
+  LOAN_TYPE_BY_CATEGORY,
+  LOAN_FLOW_BY_CATEGORY as LOAN_FLOW_MAP,
+  LOAN_CREATES_NEW_RECORD,
+  LOAN_IS_REPAYMENT,
+} from '../../utils/loanCategories';
 
 interface StepNoteProps {
   onClose: () => void;
 }
 
-const LOAN_CREATES_RECORD = new Set(['Loan Given', 'Loan Received']);
-const LOAN_TYPE_MAP: Record<string, 'lent' | 'borrowed'> = {
-  'Loan Given':    'lent',
-  'Loan Received': 'borrowed',
-  'Loan Repaid':   'lent',
-  'I Repaid Loan': 'borrowed',
-};
-const LOAN_FLOW_MAP: Record<string, 'IN' | 'OUT'> = {
-  'Loan Given':    'OUT',
-  'Loan Received': 'IN',
-  'Loan Repaid':   'IN',
-  'I Repaid Loan': 'OUT',
-};
-
 export function StepNote({ onClose }: StepNoteProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const {
     flow,
     amount,
@@ -82,6 +80,8 @@ export function StepNote({ onClose }: StepNoteProps) {
   const amountColor = actualFlow === 'OUT' ? colors.expense : colors.income;
   const prefix = actualFlow === 'OUT' ? '−' : '+';
 
+  const noteSuggestions = useNoteSuggestions(selectedCategoryId);
+
   async function handleDone() {
     if (saving || !selectedCategoryId) return;
     setSaving(true);
@@ -92,14 +92,23 @@ export function StepNote({ onClose }: StepNoteProps) {
       const numAmount = parseFloat(amount || '0');
 
       let loan_id: string | undefined;
+      let repaymentAmount: number | undefined;
 
-      if (cat.is_loan_type && personName?.trim() && LOAN_CREATES_RECORD.has(cat.name)) {
-        loan_id = await createLoan(db, {
-          type: LOAN_TYPE_MAP[cat.name],
-          person_name: personName.trim(),
-          principal: numAmount,
-          currency: defaultCurrency,
-        });
+      if (cat.is_loan_type && personName?.trim()) {
+        if (LOAN_CREATES_NEW_RECORD.has(cat.name)) {
+          loan_id = await createLoan(db, {
+            type: LOAN_TYPE_BY_CATEGORY[cat.name],
+            person_name: personName.trim(),
+            principal: numAmount,
+            currency: defaultCurrency,
+          });
+        } else if (LOAN_IS_REPAYMENT.has(cat.name)) {
+          const openLoan = await findOldestOpenLoan(db, LOAN_TYPE_BY_CATEGORY[cat.name], personName.trim());
+          if (openLoan) {
+            loan_id = openLoan.id;
+            repaymentAmount = numAmount;
+          }
+        }
       }
 
       const resolvedFlow: 'IN' | 'OUT' = cat.is_loan_type
@@ -118,9 +127,15 @@ export function StepNote({ onClose }: StepNoteProps) {
         method: 'cash',
         note: finalNote,
         loan_id,
+        paid_amount: repaymentAmount,
       });
 
+      if (loan_id && repaymentAmount) {
+        await refreshLoanStatus(db, loan_id);
+      }
+
       addRecentCategory(selectedCategoryId);
+      useDataRefreshStore.getState().refresh();
 
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
@@ -136,6 +151,7 @@ export function StepNote({ onClose }: StepNoteProps) {
       setTimeout(resetOverlay, 400);
     } catch (err) {
       console.error('Transaction save error:', err);
+      showToast('Couldn\'t save', 'Something went wrong. Try again.', 'error');
     } finally {
       setSaving(false);
     }
@@ -165,6 +181,12 @@ export function StepNote({ onClose }: StepNoteProps) {
         selectionColor={colors.brandViolet}
       />
 
+      <NoteSuggestions
+        suggestions={noteSuggestions}
+        currentValue={note ?? ''}
+        onSelect={setNote}
+      />
+
       {/* Buttons */}
       <View style={styles.buttonRow}>
         <TouchableOpacity onPress={onClose} style={styles.cancelBtn} activeOpacity={0.75}>
@@ -187,7 +209,7 @@ export function StepNote({ onClose }: StepNoteProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   container: {
     gap: 16,
   },
@@ -227,7 +249,7 @@ const styles = StyleSheet.create({
   cancelBtn: {
     flex: 1,
     height: 44,
-    backgroundColor: '#F0EAF8',
+    backgroundColor: colors.brandPale,
     borderRadius: 100,
     justifyContent: 'center',
     alignItems: 'center',

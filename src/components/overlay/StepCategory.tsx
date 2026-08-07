@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,7 +8,8 @@ import {
   TextInput,
 } from 'react-native';
 import { MotiView } from 'moti';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
+import type { ColorScheme } from '../../theme/colors';
 import { fonts } from '../../theme/fonts';
 import { useOverlayStore } from '../../stores/overlayStore';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -17,19 +18,15 @@ import { getCategoriesByFlowType } from '../../queries/categories';
 import type { RawCategory } from '../../db/types';
 import { CategoryIcon } from '../ui/CategoryIcon';
 import { formatAmount } from '../../utils/currency';
+import { LOAN_FLOW_BY_CATEGORY as LOAN_FLOW_MAP } from '../../utils/loanCategories';
 
 interface StepCategoryProps {
   onClose: () => void;
 }
 
-const LOAN_FLOW_MAP: Record<string, 'IN' | 'OUT'> = {
-  'Loan Given':    'OUT',
-  'Loan Received': 'IN',
-  'Loan Repaid':   'IN',
-  'I Repaid Loan': 'OUT',
-};
-
 export function StepCategory({ onClose }: StepCategoryProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const {
     flow,
     amount,
@@ -47,7 +44,13 @@ export function StepCategory({ onClose }: StepCategoryProps) {
   const db = useSQLiteContext();
 
   useEffect(() => {
-    getCategoriesByFlowType(db, flow).then(setAllCategories);
+    let active = true;
+    getCategoriesByFlowType(db, flow).then((cats) => {
+      if (active) setAllCategories(cats);
+    });
+    return () => {
+      active = false;
+    };
   }, [db, flow]);
 
   const selectedCategory = allCategories.find((c) => c.id === selectedCategoryId);
@@ -241,7 +244,7 @@ export function StepCategory({ onClose }: StepCategoryProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   container: {
     gap: 12,
   },
@@ -344,7 +347,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   infoStrip: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: colors.pendingBg,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -384,7 +387,7 @@ const styles = StyleSheet.create({
   cancelBtn: {
     flex: 1,
     height: 44,
-    backgroundColor: '#F0EAF8',
+    backgroundColor: colors.brandPale,
     borderRadius: 100,
     justifyContent: 'center',
     alignItems: 'center',

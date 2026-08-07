@@ -1,19 +1,21 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   StyleSheet,
 } from 'react-native';
 import { MotiView, AnimatePresence } from 'moti';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
+import type { ColorScheme } from '../../theme/colors';
 import { useOverlayStore } from '../../stores/overlayStore';
 import { StepAmount } from './StepAmount';
 import { StepCategory } from './StepCategory';
 import { StepNote } from './StepNote';
 
 export function QuickEntryOverlay() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { isOpen, step, closeOverlay, resetOverlay, isOverlayActivity } = useOverlayStore();
 
   function handleClose() {
@@ -22,10 +24,7 @@ export function QuickEntryOverlay() {
   }
 
   const inner = (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <KeyboardAvoidingView style={styles.flex} behavior="padding">
       <Pressable style={styles.backdrop} onPress={handleClose}>
         <Pressable style={styles.cardWrapper} onPress={() => {}}>
           <MotiView
@@ -95,7 +94,7 @@ export function QuickEntryOverlay() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   flex: {
     flex: 1,
   },
@@ -115,7 +114,7 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: 'rgba(255, 255, 255, 0.9)',
     padding: 20,
-    shadowColor: colors.brandNavy,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.14,
     shadowRadius: 24,

@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect, useRef } from 'react';
-import { NativeModules } from 'react-native';
+import { DeviceEventEmitter, NativeModules } from 'react-native';
 import { SQLiteProvider } from 'expo-sqlite';
 import { QuickEntryOverlay } from './components/overlay/QuickEntryOverlay';
 import { Toast } from './components/ui/Toast';
@@ -22,6 +22,24 @@ export function OverlayApp(props: { warmUpOnly?: boolean }) {
       useOverlayStore.getState().closeOverlay();
       useOverlayStore.getState().setOverlayActivityMode(false);
     };
+  }, [isWarmUp]);
+
+  useEffect(() => {
+    if (isWarmUp) return;
+    // OverlayActivity has its own task and is launched SINGLE_TOP, so if the
+    // user backgrounds the overlay (Home button) instead of dismissing it,
+    // the next back-tap/QS-tile trigger reuses this same React root via the
+    // native onNewIntent() -> "OverlayReopened" event instead of remounting.
+    // Reset the flow back to the 'amount' step, same as the mount effect above.
+    const sub = DeviceEventEmitter.addListener('OverlayReopened', () => {
+      useOverlayStore.getState().resetOverlay();
+      // resetOverlay() clears isOverlayActivity too — restore it, since this
+      // root is still the transparent OverlayActivity (QuickEntryOverlay
+      // renders differently depending on this flag; see its isOverlayActivity check).
+      useOverlayStore.getState().setOverlayActivityMode(true);
+      useOverlayStore.getState().openOverlay();
+    });
+    return () => sub.remove();
   }, [isWarmUp]);
 
   useEffect(() => {

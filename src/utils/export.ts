@@ -28,10 +28,14 @@ export interface ExportTransaction {
   flow: 'IN' | 'OUT';
   amount: number;
   currency: string;
+  /** Stable category id — preferred for cross-referencing on restore. Optional for backward compat with call sites that only have a name (e.g. report exports). */
+  categoryId?: string;
   categoryName: string;
   status: string;
   method: string;
   note?: string;
+  loan_id?: string | null;
+  paid_amount?: number;
   khumus_share?: number;
   created_at: number;
 }
@@ -199,17 +203,60 @@ export async function exportHTMLReport(summary: ReportSummary): Promise<void> {
 
 // ─── Backup / Restore ─────────────────────────────────────────────────────────
 
+export interface ExportCategory {
+  id: string;
+  name: string;
+  flow_type: string;
+  khumus_eligible: number;
+  is_loan_type: number;
+  color: string;
+  icon: string;
+  is_system: number;
+  sort_order: number;
+}
+
+export interface ExportLoan {
+  id: string;
+  type: string;
+  person_name: string;
+  principal: number;
+  currency: string;
+  status: string;
+  created_at: number;
+}
+
+export interface ExportBudget {
+  id: string;
+  category_id: string | null;
+  month: string;
+  amount_limit: number;
+  currency: string;
+}
+
 export interface BackupData {
   version: number;
   exportedAt: number;
   transactions: ExportTransaction[];
+  categories: ExportCategory[];
+  loans: ExportLoan[];
+  budgets: ExportBudget[];
 }
 
-export async function exportBackupJSON(transactions: ExportTransaction[]): Promise<void> {
+const BACKUP_VERSION = 2;
+
+export async function exportBackupJSON(data: {
+  transactions: ExportTransaction[];
+  categories: ExportCategory[];
+  loans: ExportLoan[];
+  budgets: ExportBudget[];
+}): Promise<void> {
   const backup: BackupData = {
-    version: 1,
+    version: BACKUP_VERSION,
     exportedAt: Date.now(),
-    transactions,
+    transactions: data.transactions,
+    categories: data.categories,
+    loans: data.loans,
+    budgets: data.budgets,
   };
 
   const jsonContent = JSON.stringify(backup, null, 2);
@@ -218,20 +265,131 @@ export async function exportBackupJSON(transactions: ExportTransaction[]): Promi
   await shareFile(file, 'application/json', 'Backup Xpense Data');
 }
 
+// ─── Backup validation ──────────────────────────────────────────────────────
+// This is the only recovery mechanism for the app's data (no cloud sync), so
+// a malformed/tampered file must reject the whole import rather than let
+// partially-garbage rows slip into the DB.
+
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+function isValidTransactionRow(t: unknown): t is ExportTransaction {
+  if (!isPlainObject(t)) return false;
+  return (
+    typeof t.id === 'string' &&
+    (t.flow === 'IN' || t.flow === 'OUT') &&
+    typeof t.amount === 'number' &&
+    typeof t.currency === 'string' &&
+    (t.categoryId === undefined || typeof t.categoryId === 'string') &&
+    typeof t.categoryName === 'string' &&
+    typeof t.status === 'string' &&
+    typeof t.method === 'string' &&
+    (t.note === undefined || typeof t.note === 'string') &&
+    (t.loan_id === undefined || t.loan_id === null || typeof t.loan_id === 'string') &&
+    (t.paid_amount === undefined || typeof t.paid_amount === 'number') &&
+    (t.khumus_share === undefined || typeof t.khumus_share === 'number') &&
+    typeof t.created_at === 'number'
+  );
+}
+
+function isValidCategoryRow(c: unknown): c is ExportCategory {
+  if (!isPlainObject(c)) return false;
+  return (
+    typeof c.id === 'string' &&
+    typeof c.name === 'string' &&
+    typeof c.flow_type === 'string' &&
+    typeof c.khumus_eligible === 'number' &&
+    typeof c.is_loan_type === 'number' &&
+    typeof c.color === 'string' &&
+    typeof c.icon === 'string' &&
+    typeof c.is_system === 'number' &&
+    typeof c.sort_order === 'number'
+  );
+}
+
+function isValidLoanRow(l: unknown): l is ExportLoan {
+  if (!isPlainObject(l)) return false;
+  return (
+    typeof l.id === 'string' &&
+    typeof l.type === 'string' &&
+    typeof l.person_name === 'string' &&
+    typeof l.principal === 'number' &&
+    typeof l.currency === 'string' &&
+    typeof l.status === 'string' &&
+    typeof l.created_at === 'number'
+  );
+}
+
+function isValidBudgetRow(b: unknown): b is ExportBudget {
+  if (!isPlainObject(b)) return false;
+  return (
+    typeof b.id === 'string' &&
+    (b.category_id === null || typeof b.category_id === 'string') &&
+    typeof b.month === 'string' &&
+    typeof b.amount_limit === 'number' &&
+    typeof b.currency === 'string'
+  );
+}
+
 export async function readBackupFile(): Promise<BackupData> {
   const result = await DocumentPicker.getDocumentAsync({
-    type: 'application/json',
+    type: '*/*',
     copyToCacheDirectory: true,
   });
   if (result.canceled || !result.assets?.[0]) {
     throw new Error('cancelled');
   }
-  const content = await new File(result.assets[0].uri).text();
-  const data = JSON.parse(content) as BackupData;
-  if (typeof data.version !== 'number' || !Array.isArray(data.transactions)) {
+  let raw: unknown;
+  try {
+    const content = await new File(result.assets[0].uri).text();
+    raw = JSON.parse(content);
+  } catch {
     throw new Error('invalid');
   }
-  return data;
+
+  if (!isPlainObject(raw)) throw new Error('invalid');
+  if (typeof raw.version !== 'number' || typeof raw.exportedAt !== 'number') {
+    throw new Error('invalid');
+  }
+  if (!Array.isArray(raw.transactions) || !raw.transactions.every(isValidTransactionRow)) {
+    throw new Error('invalid');
+  }
+
+  // Missing arrays (version-1 backups) are treated as empty; present arrays
+  // must validate row-by-row or the whole file is rejected.
+  let categories: ExportCategory[] = [];
+  if (raw.categories !== undefined) {
+    if (!Array.isArray(raw.categories) || !raw.categories.every(isValidCategoryRow)) {
+      throw new Error('invalid');
+    }
+    categories = raw.categories;
+  }
+
+  let loans: ExportLoan[] = [];
+  if (raw.loans !== undefined) {
+    if (!Array.isArray(raw.loans) || !raw.loans.every(isValidLoanRow)) {
+      throw new Error('invalid');
+    }
+    loans = raw.loans;
+  }
+
+  let budgets: ExportBudget[] = [];
+  if (raw.budgets !== undefined) {
+    if (!Array.isArray(raw.budgets) || !raw.budgets.every(isValidBudgetRow)) {
+      throw new Error('invalid');
+    }
+    budgets = raw.budgets;
+  }
+
+  return {
+    version: raw.version,
+    exportedAt: raw.exportedAt,
+    transactions: raw.transactions,
+    categories,
+    loans,
+    budgets,
+  };
 }
 
 function escapeHTML(str: string): string {

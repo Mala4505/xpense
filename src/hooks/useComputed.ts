@@ -269,10 +269,11 @@ export function useCategoryBreakdown(start: number, end: number): CategoryBreakd
   useFocusEffect(useCallback(() => {
     let active = true;
     db.getAllAsync<{ category_id: string; category_name: string; category_color: string; amount: number }>(
-      `SELECT t.category_id, c.name AS category_name, c.color AS category_color,
+      `SELECT t.category_id, COALESCE(c.name, 'Deleted Category') AS category_name,
+         COALESCE(c.color, '#9080B8') AS category_color,
          SUM(t.amount) AS amount
        FROM transactions t
-       JOIN categories c ON c.id = t.category_id
+       LEFT JOIN categories c ON c.id = t.category_id
        WHERE t.flow = 'OUT' AND t.created_at >= ? AND t.created_at <= ?
        GROUP BY t.category_id ORDER BY amount DESC`,
       [start, end]

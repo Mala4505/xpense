@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   StyleSheet,
@@ -11,7 +11,8 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
+import type { ColorScheme } from '../../theme/colors';
 import { fonts } from '../../theme/fonts';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { requestNotificationPermissions } from '../../utils/notifications';
@@ -20,6 +21,8 @@ import { RootStackParamList } from '../../navigation/RootNavigator';
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'OnboardingNotifications'>;
 
 function ProgressBars({ filled }: { filled: number }) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.progressRow}>
       {Array.from({ length: 6 }, (_, i) => (
@@ -27,7 +30,7 @@ function ProgressBars({ filled }: { filled: number }) {
           key={i}
           style={[
             styles.progressBar,
-            { backgroundColor: i < filled ? colors.brandNavy : '#e9ddff' },
+            { backgroundColor: i < filled ? colors.brandNavy : colors.surfaceElevated },
           ]}
         />
       ))}
@@ -36,6 +39,8 @@ function ProgressBars({ filled }: { filled: number }) {
 }
 
 export default function OnboardingNotificationsScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavProp>();
   const setNotificationsEnabled = useSettingsStore((s) => s.setNotificationsEnabled);
@@ -110,7 +115,7 @@ export default function OnboardingNotificationsScreen() {
           disabled={requesting}
         >
           {requesting ? (
-            <ActivityIndicator size="small" color={colors.brandNavy} />
+            <ActivityIndicator size="small" color={colors.textOnYellow} />
           ) : (
             <Text style={styles.allowText}>Allow Notifications</Text>
           )}
@@ -124,10 +129,10 @@ export default function OnboardingNotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fef7ff',
+    backgroundColor: colors.surfaceBg,
     paddingHorizontal: 20,
     justifyContent: 'space-between',
   },
@@ -148,7 +153,7 @@ const styles = StyleSheet.create({
   stepLabel: {
     fontFamily: fonts.sansBold,
     fontSize: 12,
-    color: '#797581',
+    color: colors.textMuted,
     letterSpacing: 0.8,
     marginTop: 8,
   },
@@ -172,14 +177,14 @@ const styles = StyleSheet.create({
     width: 160,
     height: 160,
     borderRadius: 80,
-    backgroundColor: '#aa7dff',
+    backgroundColor: colors.accentLavender,
     opacity: 0.18,
   },
   bellCircle: {
     width: 112,
     height: 112,
     borderRadius: 56,
-    backgroundColor: '#eee4ff',
+    backgroundColor: colors.brandPale,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -198,7 +203,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: fonts.sans,
     fontSize: 17,
-    color: '#484550',
+    color: colors.textMuted,
     lineHeight: 24,
     textAlign: 'center',
     maxWidth: 280,
@@ -222,7 +227,7 @@ const styles = StyleSheet.create({
   allowText: {
     fontFamily: fonts.sansBold,
     fontSize: 12,
-    color: colors.brandNavy,
+    color: colors.textOnYellow,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
@@ -233,7 +238,7 @@ const styles = StyleSheet.create({
   skipText: {
     fontFamily: fonts.sansBold,
     fontSize: 12,
-    color: '#797581',
+    color: colors.textMuted,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },

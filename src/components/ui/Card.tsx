@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, ViewStyle } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
 
 interface CardProps {
   children: React.ReactNode;
@@ -8,6 +8,7 @@ interface CardProps {
 }
 
 export function Card({ children, style }: CardProps) {
+  const colors = useColors();
   return (
     <View
       style={[

@@ -24,7 +24,8 @@ import Svg, {
   Stop,
   Text as SvgText,
 } from 'react-native-svg';
-import { colors } from '../theme/colors';
+import { useColors } from '../theme/useColors';
+import type { ColorScheme } from '../theme/colors';
 import { fonts } from '../theme/fonts';
 import { formatAmount } from '../utils/currency';
 import { getDateRangeTimestamps } from '../utils/date';
@@ -101,6 +102,7 @@ function buildSmoothPath(pts: { x: number; y: number }[]): string {
 }
 
 function LineChart({ data, width }: ChartProps) {
+  const colors = useColors();
   const [touchedIndex, setTouchedIndex] = useState<number | null>(null);
 
   const cW = width - PAD.left - PAD.right;
@@ -157,12 +159,12 @@ function LineChart({ data, width }: ChartProps) {
       <Svg width={width} height={CHART_HEIGHT}>
         <Defs>
           <LinearGradient id="incGrad" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0%" stopColor="#22C87A" stopOpacity={0.18} />
-            <Stop offset="100%" stopColor="#22C87A" stopOpacity={0} />
+            <Stop offset="0%" stopColor={colors.income} stopOpacity={0.18} />
+            <Stop offset="100%" stopColor={colors.income} stopOpacity={0} />
           </LinearGradient>
           <LinearGradient id="expGrad" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0%" stopColor="#E05C5C" stopOpacity={0.15} />
-            <Stop offset="100%" stopColor="#E05C5C" stopOpacity={0} />
+            <Stop offset="0%" stopColor={colors.expense} stopOpacity={0.15} />
+            <Stop offset="100%" stopColor={colors.expense} stopOpacity={0} />
           </LinearGradient>
         </Defs>
 
@@ -315,6 +317,8 @@ function formatYLabel(val: number): string {
 }
 
 function ChartLegend() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.legend}>
       <View style={styles.legendItem}>
@@ -344,6 +348,8 @@ function CategoryBreakdownRow({
   currency: string;
   index: number;
 }) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <MotiView
       from={{ opacity: 0, translateX: -12 }}
@@ -390,6 +396,8 @@ function CategoryPickerModal({
   onSelect: (cat: RawCategory) => void;
   onClose: () => void;
 }) {
+  const colors = useColors();
+  const cpStyles = useMemo(() => createCpStyles(colors), [colors]);
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={cpStyles.overlay}>
@@ -425,6 +433,8 @@ const MONTH_NAMES = [
 ];
 
 function BudgetTabContent({ currency }: { currency: string }) {
+  const colors = useColors();
+  const btStyles = useMemo(() => createBtStyles(colors), [colors]);
   const budgets = useBudgetStore((s) => s.budgets);
   const weeklyPace = useBudgetStore((s) => s.weeklyPace);
   const projectedMonthEnd = useBudgetStore((s) => s.projectedMonthEnd);
@@ -633,6 +643,8 @@ function BudgetTabContent({ currency }: { currency: string }) {
 type MainTab = 'budget' | 'analytics' | 'trends';
 
 export default function ReportsScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const currency = useSettingsStore((s) => s.defaultCurrency);
 
@@ -644,7 +656,7 @@ export default function ReportsScreen() {
     setTimeout(() => setRefreshing(false), 500);
   }, [dataRefresh]);
 
-  const [activeTab, setActiveTab] = useState<MainTab>('budget');
+  const [activeTab, setActiveTab] = useState<MainTab>('analytics');
   const [activeRange, setActiveRange] = useState<TimeRange>('1M');
   const [chartWidth, setChartWidth] = useState(320);
   const [exporting, setExporting] = useState(false);
@@ -722,7 +734,7 @@ export default function ReportsScreen() {
 
       {/* Tab bar */}
       <View style={styles.tabBar}>
-        {(['budget', 'analytics', 'trends'] as MainTab[]).map((tab) => (
+        {(['analytics', 'budget', 'trends'] as MainTab[]).map((tab) => (
           <TouchableOpacity
             key={tab}
             style={[styles.tabItem, activeTab === tab && styles.tabItemActive]}
@@ -881,9 +893,9 @@ export default function ReportsScreen() {
                 disabled={exporting}
               >
                 {exporting ? (
-                  <ActivityIndicator size="small" color={colors.textPrimary} />
+                  <ActivityIndicator size="small" color={colors.textOnYellow} />
                 ) : (
-                  <Ionicons name="document-text-outline" size={18} color={colors.textPrimary} />
+                  <Ionicons name="document-text-outline" size={18} color={colors.textOnYellow} />
                 )}
                 <Text style={styles.exportBtnText}>
                   {exporting ? 'Generating…' : 'Export PDF Report'}
@@ -917,7 +929,7 @@ export default function ReportsScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.surfaceBg,
@@ -1152,7 +1164,7 @@ const styles = StyleSheet.create({
   exportBtnText: {
     fontFamily: fonts.sansBold,
     fontSize: 14,
-    color: colors.textPrimary,
+    color: colors.textOnYellow,
   },
   emptyWrap: {
     alignItems: 'center',
@@ -1184,7 +1196,7 @@ const styles = StyleSheet.create({
 
 // ─── Budget tab styles ────────────────────────────────────────────────────────
 
-const btStyles = StyleSheet.create({
+const createBtStyles = (colors: ColorScheme) => StyleSheet.create({
   container: {
     gap: 12,
   },
@@ -1284,7 +1296,7 @@ const btStyles = StyleSheet.create({
 
 // ─── Category picker styles ───────────────────────────────────────────────────
 
-const cpStyles = StyleSheet.create({
+const createCpStyles = (colors: ColorScheme) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(26,16,64,0.4)',

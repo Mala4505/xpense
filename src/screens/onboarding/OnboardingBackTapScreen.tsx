@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -12,7 +12,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import { Accelerometer } from 'expo-sensors';
 import * as Haptics from 'expo-haptics';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
+import type { ColorScheme } from '../../theme/colors';
 import { fonts } from '../../theme/fonts';
 import { RootStackParamList } from '../../navigation/RootNavigator';
 
@@ -22,6 +23,8 @@ const TAP_THRESHOLD = 2.4;
 const MIN_TAP_INTERVAL_MS = 280;
 
 function ProgressBars({ filled }: { filled: number }) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.progressRow}>
       {Array.from({ length: 6 }, (_, i) => (
@@ -29,7 +32,7 @@ function ProgressBars({ filled }: { filled: number }) {
           key={i}
           style={[
             styles.progressBar,
-            { backgroundColor: i < filled ? colors.brandNavy : '#e9ddff' },
+            { backgroundColor: i < filled ? colors.brandNavy : colors.surfaceElevated },
           ]}
         />
       ))}
@@ -38,6 +41,8 @@ function ProgressBars({ filled }: { filled: number }) {
 }
 
 export default function OnboardingBackTapScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavProp>();
 
@@ -129,7 +134,7 @@ export default function OnboardingBackTapScreen() {
               style={styles.ripple}
             />
             <View style={styles.rippleInner} />
-            <Ionicons name="finger-print" size={32} color="white" style={styles.touchIcon} />
+            <Ionicons name="finger-print" size={32} color={colors.textInverse} style={styles.touchIcon} />
           </View>
         </MotiView>
 
@@ -156,7 +161,7 @@ export default function OnboardingBackTapScreen() {
           {testPassed ? (
             <View style={styles.successRow}>
               <View style={styles.successCircle}>
-                <Ionicons name="checkmark" size={18} color="white" />
+                <Ionicons name="checkmark" size={18} color={colors.textInverse} />
               </View>
               <Text style={styles.successText}>Back tap detected!</Text>
             </View>
@@ -184,16 +189,16 @@ export default function OnboardingBackTapScreen() {
         activeOpacity={0.9}
       >
         <Text style={styles.ctaText}>Next</Text>
-        <Ionicons name="arrow-forward" size={20} color={colors.brandNavy} />
+        <Ionicons name="arrow-forward" size={20} color={colors.textOnYellow} />
       </TouchableOpacity>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fef7ff',
+    backgroundColor: colors.surfaceBg,
     paddingHorizontal: 20,
   },
 
@@ -208,14 +213,14 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#eee4ff',
+    backgroundColor: colors.brandPale,
     justifyContent: 'center',
     alignItems: 'center',
   },
   skipText: {
     fontFamily: fonts.sansMedium,
     fontSize: 14,
-    color: '#797581',
+    color: colors.textMuted,
   },
 
   // ── Progress ──────────────────────────────────────────────────────────────
@@ -232,7 +237,7 @@ const styles = StyleSheet.create({
   stepLabel: {
     fontFamily: fonts.sansBold,
     fontSize: 12,
-    color: '#797581',
+    color: colors.textMuted,
     letterSpacing: 0.8,
     marginBottom: 8,
   },
@@ -256,7 +261,7 @@ const styles = StyleSheet.create({
     width: '80%',
     aspectRatio: 1,
     borderRadius: 9999,
-    backgroundColor: '#eee4ff',
+    backgroundColor: colors.brandPale,
     opacity: 0.5,
   },
   phone: {
@@ -265,10 +270,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandNavy,
     borderRadius: 24,
     borderWidth: 4,
-    borderColor: 'white',
+    borderColor: colors.textInverse,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: colors.brandNavy,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
     shadowRadius: 32,
@@ -280,14 +285,14 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#9B6EF0',
+    backgroundColor: colors.brandViolet,
   },
   rippleInner: {
     position: 'absolute',
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(155,110,240,0.5)',
+    backgroundColor: colors.brandViolet + '80',
   },
   touchIcon: {
     position: 'absolute',
@@ -311,7 +316,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: fonts.sans,
     fontSize: 15,
-    color: '#484550',
+    color: colors.textMuted,
     lineHeight: 22,
     textAlign: 'center',
   },
@@ -319,19 +324,19 @@ const styles = StyleSheet.create({
   // ── Test card ─────────────────────────────────────────────────────────────
   testCard: {
     width: '100%',
-    backgroundColor: 'white',
+    backgroundColor: colors.surfaceCard,
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 20,
     alignItems: 'center',
     gap: 12,
-    shadowColor: colors.brandNavy,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 10,
     elevation: 3,
     borderWidth: 1,
-    borderColor: 'rgba(200,192,248,0.3)',
+    borderColor: colors.surfaceBorder,
   },
   testPrompt: {
     fontFamily: fonts.sansBold,
@@ -348,12 +353,12 @@ const styles = StyleSheet.create({
     height: 16,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: '#d0c4f0',
+    borderColor: colors.surfaceBorder,
     backgroundColor: 'transparent',
   },
   tapDotFilled: {
-    backgroundColor: '#7042c3',
-    borderColor: '#7042c3',
+    backgroundColor: colors.brandPurple,
+    borderColor: colors.brandPurple,
   },
   successRow: {
     flexDirection: 'row',
@@ -383,7 +388,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 16,
     borderRadius: 14,
-    shadowColor: colors.brandNavy,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 14,
@@ -395,6 +400,6 @@ const styles = StyleSheet.create({
   ctaText: {
     fontFamily: fonts.sansBold,
     fontSize: 16,
-    color: colors.brandNavy,
+    color: colors.textOnYellow,
   },
 });

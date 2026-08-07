@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Platform, StyleSheet, TouchableOpacity, View, GestureResponderEvent } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
-import { colors } from '../theme/colors';
+import { useColors, useThemeMode } from '../theme/useColors';
+import type { ColorScheme } from '../theme/colors';
 import { fonts } from '../theme/fonts';
 import { springs } from '../theme/springs';
 import { useAddSheetStore } from '../stores/addSheetStore';
@@ -15,9 +16,15 @@ import SettingsScreen from '../screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
 
+const TAB_BAR_HEIGHT = 70;
+
 function FABButton({ onPress }: { onPress?: (e: GestureResponderEvent) => void }) {
+  const colors = useColors();
+  const mode = useThemeMode();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [pressed, setPressed] = useState(false);
   const isOpen = useAddSheetStore((s) => s.isOpen);
+  const plusColor = mode === 'dark' ? colors.surfaceBg : colors.brandNavy;
 
   function handlePress() {
     if (isOpen) {
@@ -45,7 +52,7 @@ function FABButton({ onPress }: { onPress?: (e: GestureResponderEvent) => void }
             animate={{ rotate: isOpen ? '45deg' : '0deg' }}
             transition={springs.snappy}
           >
-            <Ionicons name="add" size={29} color={colors.brandNavy} />
+            <Ionicons name="add" size={29} color={plusColor} />
           </MotiView>
         </TouchableOpacity>
       </MotiView>
@@ -58,6 +65,8 @@ function DummyScreen() {
 }
 
 export default function BottomTabNavigator() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const isSheetOpen = useAddSheetStore((s) => s.isOpen);
 
   return (
@@ -125,12 +134,12 @@ export default function BottomTabNavigator() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   tabBar: {
     backgroundColor: colors.surfaceCard,
     borderTopWidth: 0.5,
     borderTopColor: colors.surfaceBorder,
-    height: 70,
+    height: TAB_BAR_HEIGHT,
     paddingBottom: Platform.select({ ios: 20, android: 8 }),
     paddingTop: 2,
   },
@@ -154,12 +163,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandYellow,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: colors.surfaceBg,
-    shadowColor: colors.brandNavy,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 14,
   },
 });

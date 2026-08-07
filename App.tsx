@@ -13,12 +13,12 @@ import {
   SpaceMono_700Bold,
 } from '@expo-google-fonts/space-mono';
 import { StatusBar } from 'expo-status-bar';
-import { View, Linking, NativeModules, Platform } from 'react-native';
+import { View, Linking, NativeModules, Platform, LogBox } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import RootNavigator from './src/navigation/RootNavigator';
-import { fonts } from './src/theme';
+import { fonts, useColors, useThemeMode } from './src/theme';
 import { onInit } from './src/db/database';
 import { useOverlayStore } from './src/stores/overlayStore';
 import { QuickEntryOverlay } from './src/components/overlay/QuickEntryOverlay';
@@ -32,8 +32,12 @@ import { getStartOfMonth, getEndOfMonth } from './src/utils/date';
 
 SplashScreen.preventAutoHideAsync();
 
+LogBox.ignoreLogs(['SafeAreaView has been deprecated']);
+
 function AppContent({ fontsLoaded }: { fontsLoaded: boolean }) {
   const db = useSQLiteContext();
+  const colors = useColors();
+  const themeMode = useThemeMode();
   const isOverlayActivity = useOverlayStore((s) => s.isOverlayActivity);
   const currency = useSettingsStore((s) => s.defaultCurrency);
   const backTapEnabled = useSettingsStore((s) => s.backTapEnabled);
@@ -87,7 +91,9 @@ function AppContent({ fontsLoaded }: { fontsLoaded: boolean }) {
 
   useEffect(() => {
     if (!hasHydrated || Platform.OS !== 'android') return;
-    if (!backTapEnabled) {
+    if (backTapEnabled) {
+      NativeModules.BackTap?.start?.();
+    } else {
       NativeModules.BackTap?.stop?.();
     }
   }, [hasHydrated, backTapEnabled]);
@@ -104,7 +110,8 @@ function AppContent({ fontsLoaded }: { fontsLoaded: boolean }) {
   }, []);
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.surfaceBg }}>
+      <StatusBar style={themeMode === 'dark' ? 'light' : 'dark'} backgroundColor="transparent" translucent={false} />
       <NavigationContainer>
         <RootNavigator />
       </NavigationContainer>
@@ -139,7 +146,6 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <StatusBar style="dark" backgroundColor="transparent" translucent={false} />
         <SQLiteProvider databaseName="xpense.db" onInit={onInit} useSuspense>
           <Suspense fallback={null}>
             <AppContent fontsLoaded={fontsLoaded} />

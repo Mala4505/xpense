@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
+import type { ColorScheme } from '../../theme/colors';
 import { fonts } from '../../theme/fonts';
 import { formatAmount } from '../../utils/currency';
 
@@ -15,6 +16,8 @@ interface HeroCardsProps {
 }
 
 function PctBadge({ pct }: { pct: number }) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={[styles.badge, { backgroundColor: 'rgba(255,255,255,0.18)' }]}>
       <Ionicons
@@ -34,6 +37,8 @@ export function HeroCards({
   incomePct,
   expensePct,
 }: HeroCardsProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.wrapper}>
       <View style={styles.stackedArea}>
@@ -73,7 +78,7 @@ export function HeroCards({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   wrapper: {
     marginTop: 8,
   },
@@ -101,7 +106,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: -16,
     marginHorizontal: 12,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.18,
     shadowRadius: 10,

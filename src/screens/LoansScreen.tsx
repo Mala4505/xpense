@@ -11,19 +11,25 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { MotiView, AnimatePresence } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme/colors';
+import { useColors } from '../theme/useColors';
+import type { ColorScheme } from '../theme/colors';
 import { fonts } from '../theme/fonts';
 import { formatAmount } from '../utils/currency';
 import { formatTransactionDate } from '../utils/date';
+import { useSQLiteContext } from 'expo-sqlite';
 import { useLoans } from '../hooks/useCategories';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useOverlayStore } from '../stores/overlayStore';
 import { ComputedLoan } from '../types';
 import { useDataRefreshStore } from '../stores/dataRefreshStore';
+import { getCategoryByName } from '../queries/categories';
+import { REPAYMENT_CATEGORY_NAME, LOAN_FLOW_BY_CATEGORY } from '../utils/loanCategories';
 
 type TabType = 'lent' | 'borrowed';
 
 function StatusBadge({ status }: { status: 'active' | 'partial' | 'settled' }) {
+  const colors = useColors();
+  const loanStyles = useMemo(() => createLoanStyles(colors), [colors]);
   const configs = {
     active: { bg: colors.pendingBg, text: colors.pending, label: 'Active' },
     partial: { bg: colors.khumusBg, text: colors.khumus, label: 'Partial' },
@@ -38,6 +44,8 @@ function StatusBadge({ status }: { status: 'active' | 'partial' | 'settled' }) {
 }
 
 function ProgressBar({ progress }: { progress: number }) {
+  const colors = useColors();
+  const loanStyles = useMemo(() => createLoanStyles(colors), [colors]);
   const clamped = Math.min(1, Math.max(0, progress));
   return (
     <View style={loanStyles.progressTrack}>
@@ -65,6 +73,8 @@ function LoanCard({
   animationIndex: number;
   onLogRepayment: () => void;
 }) {
+  const colors = useColors();
+  const loanStyles = useMemo(() => createLoanStyles(colors), [colors]);
   const [expanded, setExpanded] = useState(false);
   const progress = loan.total_repaid / loan.principal;
   const isSettled = loan.status === 'settled';
@@ -162,12 +172,25 @@ function LoanCard({
 }
 
 export default function LoansScreen() {
+  const colors = useColors();
+  const loanStyles = useMemo(() => createLoanStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const currency = useSettingsStore((s) => s.defaultCurrency);
-  const openOverlay = useOverlayStore((s) => s.openOverlay);
+  const openLoanRepayment = useOverlayStore((s) => s.openLoanRepayment);
+  const db = useSQLiteContext();
   const loans = useLoans();
   const [activeTab, setActiveTab] = useState<TabType>('lent');
+
+  // Preset the repayment overlay to the correct category + this loan's exact
+  // person name, so the FIFO oldest-open-loan match at save time is guaranteed
+  // to find this loan rather than relying on a retyped name matching exactly.
+  const handleLogRepayment = useCallback(async (loan: ComputedLoan) => {
+    const categoryName = REPAYMENT_CATEGORY_NAME[loan.type];
+    const category = await getCategoryByName(db, categoryName);
+    if (!category) return;
+    openLoanRepayment(category.id, LOAN_FLOW_BY_CATEGORY[categoryName], loan.person_name);
+  }, [db, openLoanRepayment]);
 
   const refresh = useDataRefreshStore(s => s.refresh);
   const [refreshing, setRefreshing] = useState(false);
@@ -303,7 +326,7 @@ export default function LoansScreen() {
                 loan={loan}
                 currency={currency}
                 animationIndex={i}
-                onLogRepayment={openOverlay}
+                onLogRepayment={() => handleLogRepayment(loan)}
               />
             ))}
           </View>
@@ -313,7 +336,7 @@ export default function LoansScreen() {
   );
 }
 
-const loanStyles = StyleSheet.create({
+const createLoanStyles = (colors: ColorScheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.surfaceBg,
@@ -383,7 +406,7 @@ const loanStyles = StyleSheet.create({
   },
   tabActive: {
     backgroundColor: colors.surfaceCard,
-    shadowColor: colors.brandNavy,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,

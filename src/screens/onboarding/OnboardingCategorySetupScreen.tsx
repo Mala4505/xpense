@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -10,7 +10,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
+import type { ColorScheme } from '../../theme/colors';
 import { fonts } from '../../theme/fonts';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { RootStackParamList } from '../../navigation/RootNavigator';
@@ -19,6 +20,8 @@ import { DEFAULT_CATEGORIES } from '../../utils/categories';
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'OnboardingCategorySetup'>;
 
 function ProgressBars({ filled }: { filled: number }) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.progressRow}>
       {Array.from({ length: 6 }, (_, i) => (
@@ -26,7 +29,7 @@ function ProgressBars({ filled }: { filled: number }) {
           key={i}
           style={[
             styles.progressBar,
-            { backgroundColor: i < filled ? colors.brandNavy : '#e9ddff' },
+            { backgroundColor: i < filled ? colors.brandNavy : colors.surfaceElevated },
           ]}
         />
       ))}
@@ -60,6 +63,8 @@ function CategoryCard({
   selected: boolean;
   onToggle: () => void;
 }) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <TouchableOpacity
       style={[styles.catCard, selected && styles.catCardSelected]}
@@ -68,7 +73,7 @@ function CategoryCard({
     >
       {selected && (
         <View style={styles.checkBadge}>
-          <Ionicons name="checkmark" size={10} color="white" />
+          <Ionicons name="checkmark" size={10} color={colors.textOnYellow} />
         </View>
       )}
       <View style={[styles.catIconCircle, { backgroundColor: colors.brandPale }]}>
@@ -82,6 +87,8 @@ function CategoryCard({
 }
 
 export default function OnboardingCategorySetupScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavProp>();
   const setPinnedCategoryNames = useSettingsStore((s) => s.setPinnedCategoryNames);
@@ -110,7 +117,7 @@ export default function OnboardingCategorySetupScreen() {
       <View style={styles.header}>
         <View style={styles.avatarRow}>
           <View style={styles.avatar}>
-            <Ionicons name="person-outline" size={18} color="#797581" />
+            <Ionicons name="person-outline" size={18} color={colors.textMuted} />
           </View>
           <Text style={styles.headerTitle}>Finance Tracker</Text>
         </View>
@@ -176,14 +183,14 @@ export default function OnboardingCategorySetupScreen() {
       <View style={[styles.bottomAction, { paddingBottom: insets.bottom + 16 }]}>
         <TouchableOpacity style={styles.ctaButton} onPress={handleContinue} activeOpacity={0.9}>
           <Text style={styles.ctaText}>Continue</Text>
-          <Ionicons name="arrow-forward" size={20} color={colors.brandNavy} />
+          <Ionicons name="arrow-forward" size={20} color={colors.textOnYellow} />
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.surfaceBg,
@@ -206,7 +213,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#eee4ff',
+    backgroundColor: colors.brandPale,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
@@ -238,7 +245,7 @@ const styles = StyleSheet.create({
   stepLabel: {
     fontFamily: fonts.sansBold,
     fontSize: 12,
-    color: '#797581',
+    color: colors.textMuted,
     letterSpacing: 0.8,
     marginBottom: 8,
   },
@@ -252,7 +259,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: fonts.sans,
     fontSize: 14,
-    color: '#484550',
+    color: colors.textMuted,
   },
 
   // ── Progress ──────────────────────────────────────────────────────────────
@@ -296,7 +303,7 @@ const styles = StyleSheet.create({
   // ── Category card ─────────────────────────────────────────────────────────
   catCard: {
     width: '47%',
-    backgroundColor: 'white',
+    backgroundColor: colors.surfaceCard,
     borderRadius: 14,
     paddingVertical: 12,
     paddingHorizontal: 12,
@@ -304,7 +311,7 @@ const styles = StyleSheet.create({
     gap: 6,
     borderWidth: 1,
     borderColor: 'transparent',
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -312,7 +319,7 @@ const styles = StyleSheet.create({
   },
   catCardSelected: {
     borderWidth: 2,
-    borderColor: '#aa7dff',
+    borderColor: colors.accentLavender,
   },
   checkBadge: {
     position: 'absolute',
@@ -321,7 +328,7 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: '#aa7dff',
+    backgroundColor: colors.accentLavender,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -335,7 +342,7 @@ const styles = StyleSheet.create({
   catCardLabel: {
     fontFamily: fonts.sansBold,
     fontSize: 12,
-    color: '#484550',
+    color: colors.textMuted,
     textAlign: 'center',
     letterSpacing: 0.2,
   },
@@ -362,7 +369,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 16,
     borderRadius: 100,
-    shadowColor: colors.brandNavy,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
@@ -371,6 +378,6 @@ const styles = StyleSheet.create({
   ctaText: {
     fontFamily: fonts.sansBold,
     fontSize: 17,
-    color: colors.brandNavy,
+    color: colors.textOnYellow,
   },
 });

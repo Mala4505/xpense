@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { MotiView } from 'moti';
 import { differenceInDays, endOfMonth } from 'date-fns';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
+import type { ColorScheme } from '../../theme/colors';
 import { fonts } from '../../theme/fonts';
 import { formatAmount } from '../../utils/currency';
 import type { BudgetEntry } from '../../stores/budgetStore';
@@ -13,24 +14,26 @@ interface BudgetCardProps {
   onPress: () => void;
 }
 
-function barColor(pct: number): string {
+function barColor(pct: number, colors: ColorScheme): string {
   if (pct >= 90) return colors.expense;
   if (pct >= 75) return colors.khumus;
   return colors.income;
 }
 
-function badgeBg(pct: number): string {
+function badgeBg(pct: number, colors: ColorScheme): string {
   if (pct >= 90) return colors.expenseBg;
   if (pct >= 75) return colors.khumusBg;
   return colors.incomeBg;
 }
 
 export function BudgetCard({ budget, monthLabel, onPress }: BudgetCardProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const pct = Math.min(budget.percentUsed, 100);
   const overflow = budget.percentUsed > 100;
   const remaining = Math.max(budget.amountLimit - budget.amountSpent, 0);
-  const daysLeft = differenceInDays(endOfMonth(new Date()), new Date());
-  const barCol = barColor(budget.percentUsed);
+  const daysLeft = Math.max(1, differenceInDays(endOfMonth(new Date()), new Date()));
+  const barCol = barColor(budget.percentUsed, colors);
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
@@ -39,7 +42,7 @@ export function BudgetCard({ budget, monthLabel, onPress }: BudgetCardProps) {
           <Text style={styles.title}>Monthly Budget</Text>
           <Text style={styles.monthLabel}>{monthLabel}</Text>
         </View>
-        <View style={[styles.badge, { backgroundColor: badgeBg(budget.percentUsed) }]}>
+        <View style={[styles.badge, { backgroundColor: badgeBg(budget.percentUsed, colors) }]}>
           <Text style={[styles.badgeText, { color: barCol }]}>
             {Math.round(budget.percentUsed)}%
           </Text>
@@ -72,7 +75,7 @@ export function BudgetCard({ budget, monthLabel, onPress }: BudgetCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   card: {
     backgroundColor: colors.surfaceCard,
     borderRadius: 16,

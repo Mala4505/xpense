@@ -14,6 +14,7 @@ import OnboardingNotificationsScreen from '../screens/onboarding/OnboardingNotif
 import OnboardingCategorySetupScreen from '../screens/onboarding/OnboardingCategorySetupScreen';
 import OnboardingLaunchpadScreen from '../screens/onboarding/OnboardingLaunchpadScreen';
 import { useSettingsStore } from '../stores/settingsStore';
+import { useColors } from '../theme/useColors';
 
 export type RootStackParamList = {
   // Onboarding
@@ -35,20 +36,27 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
+  const colors = useColors();
   const hasCompletedOnboarding = useSettingsStore((s) => s.hasCompletedOnboarding);
   const userName = useSettingsStore((s) => s.userName);
   const pinnedCategoryNames = useSettingsStore((s) => s.pinnedCategoryNames);
   const _hasHydrated = useSettingsStore((s) => s._hasHydrated);
 
   // Wait for AsyncStorage hydration to avoid flashing onboarding on returning users
-  if (!_hasHydrated) return <View style={{ flex: 1, backgroundColor: '#F5F4FC' }} />;
+  if (!_hasHydrated) return <View style={{ flex: 1, backgroundColor: colors.surfaceBg }} />;
 
   // Show onboarding when not completed, or if both name and categories are missing (edge-case recovery)
   const shouldShowOnboarding =
     !hasCompletedOnboarding || (!userName.trim() && pinnedCategoryNames.length === 0);
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: 'slide_from_right',
+        contentStyle: { backgroundColor: colors.surfaceBg },
+      }}
+    >
       {shouldShowOnboarding ? (
         <>
           <Stack.Screen

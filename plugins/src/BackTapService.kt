@@ -20,7 +20,7 @@ import kotlin.math.sqrt
 
 class BackTapService : Service(), SensorEventListener {
 
-    private lateinit var sensorManager: SensorManager
+    private var sensorManager: SensorManager? = null
     private var accelerometer: Sensor? = null
 
     private val taps = mutableListOf<Long>()
@@ -57,10 +57,13 @@ class BackTapService : Service(), SensorEventListener {
             .build()
         startForeground(NOTIF_ID, notification)
 
-        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
-        accelerometer?.let {
-            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME)
+        val sm = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        sensorManager = sm
+        accelerometer = sm.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(this)) {
+            accelerometer?.let {
+                sm.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME)
+            }
         }
 
         if (!receiverRegistered) {
@@ -72,7 +75,7 @@ class BackTapService : Service(), SensorEventListener {
     }
 
     override fun onDestroy() {
-        sensorManager.unregisterListener(this)
+        sensorManager?.unregisterListener(this)
         if (receiverRegistered) {
             unregisterReceiver(unlockReceiver)
             receiverRegistered = false

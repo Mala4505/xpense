@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Text, View, ViewStyle } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
+import type { ColorScheme } from '../../theme/colors';
 import { fonts } from '../../theme/fonts';
 
 interface StatusBadgeProps {
@@ -9,27 +10,29 @@ interface StatusBadgeProps {
   style?: ViewStyle;
 }
 
-const BADGE_CONFIG = {
+const buildBadgeConfig = (colors: ColorScheme) => ({
   completed: {
-    IN:  { bg: colors.incomeBg,  text: colors.income,       label: 'Received'  },
-    OUT: { bg: colors.expenseBg, text: colors.expense,      label: 'Paid'      },
+    IN:  { bg: colors.incomeBg,     text: colors.income,       label: 'Received'  },
+    OUT: { bg: colors.expenseBg,    text: colors.expense,      label: 'Paid'      },
   },
   pending: {
-    IN:  { bg: colors.pendingBg, text: colors.pending,      label: 'Pending'   },
-    OUT: { bg: colors.pendingBg, text: colors.pending,      label: 'Pending'   },
+    IN:  { bg: colors.pendingBg,    text: colors.pending,      label: 'Pending'   },
+    OUT: { bg: colors.pendingBg,    text: colors.pending,      label: 'Pending'   },
   },
   partial: {
-    IN:  { bg: colors.khumusBg,  text: colors.khumus,       label: 'Partial'   },
-    OUT: { bg: colors.khumusBg,  text: colors.khumus,       label: 'Partial'   },
+    IN:  { bg: colors.khumusBg,     text: colors.khumus,       label: 'Partial'   },
+    OUT: { bg: colors.khumusBg,     text: colors.khumus,       label: 'Partial'   },
   },
   cancelled: {
-    IN:  { bg: '#F5F2FA',        text: colors.textMuted,    label: 'Cancelled' },
-    OUT: { bg: '#F5F2FA',        text: colors.textMuted,    label: 'Cancelled' },
+    IN:  { bg: colors.surfaceElevated, text: colors.textMuted, label: 'Cancelled' },
+    OUT: { bg: colors.surfaceElevated, text: colors.textMuted, label: 'Cancelled' },
   },
-};
+});
 
 export function StatusBadge({ status, flow, style }: StatusBadgeProps) {
-  const cfg = BADGE_CONFIG[status][flow];
+  const colors = useColors();
+  const badgeConfig = useMemo(() => buildBadgeConfig(colors), [colors]);
+  const cfg = badgeConfig[status][flow];
 
   return (
     <View

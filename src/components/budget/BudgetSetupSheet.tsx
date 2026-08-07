@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Modal,
-  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -13,7 +12,8 @@ import {
 } from 'react-native';
 import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
+import type { ColorScheme } from '../../theme/colors';
 import { fonts } from '../../theme/fonts';
 import { useBudgetStore } from '../../stores/budgetStore';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -35,6 +35,8 @@ export function BudgetSetupSheet({
   existingBudgetId,
   initialLimit,
 }: BudgetSetupSheetProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [amount, setAmount] = useState('');
   const [saving, setSaving] = useState(false);
   const currency = useSettingsStore((s) => s.defaultCurrency);
@@ -90,10 +92,7 @@ export function BudgetSetupSheet({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={styles.overlay} behavior="padding">
         <TouchableOpacity style={{ flex: 1 }} onPress={onClose} />
         <MotiView
           from={{ translateY: 60, opacity: 0 }}
@@ -158,7 +157,7 @@ export function BudgetSetupSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(26,16,64,0.4)',

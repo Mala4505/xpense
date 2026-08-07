@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,13 +10,16 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
-import { colors } from '../../theme/colors';
+import { useColors } from '../../theme/useColors';
+import type { ColorScheme } from '../../theme/colors';
 import { fonts } from '../../theme/fonts';
 import { RootStackParamList } from '../../navigation/RootNavigator';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'OnboardingWelcome'>;
 
 export default function OnboardingWelcomeScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavProp>();
 
@@ -50,7 +53,7 @@ export default function OnboardingWelcomeScreen() {
         {/* Floating growth chip */}
         <View style={styles.growthChip}>
           <View style={styles.growthIconCircle}>
-            <Ionicons name="trending-up" size={16} color="white" />
+            <Ionicons name="trending-up" size={16} color={colors.textOnYellow} />
           </View>
           <View>
             <Text style={styles.growthLabel}>GROWTH</Text>
@@ -85,14 +88,14 @@ export default function OnboardingWelcomeScreen() {
           activeOpacity={0.9}
         >
           <Text style={styles.ctaText}>Get Started</Text>
-          <Ionicons name="arrow-forward" size={20} color={colors.brandNavy} />
+          <Ionicons name="arrow-forward" size={20} color={colors.textOnYellow} />
         </TouchableOpacity>
       </MotiView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorScheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.surfaceBg,
@@ -107,7 +110,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 24,
     overflow: 'hidden',
-    shadowColor: colors.brandNavy,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.08,
     shadowRadius: 30,
@@ -182,7 +185,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandNavy,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: colors.brandNavy,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 20,
@@ -206,30 +209,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    backgroundColor: colors.surfaceCard + 'EB',
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 3,
     borderWidth: 1,
-    borderColor: 'rgba(200,192,248,0.3)',
+    borderColor: colors.surfaceBorder,
   },
   growthIconCircle: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#aa7dff',
+    backgroundColor: colors.accentLavender,
     justifyContent: 'center',
     alignItems: 'center',
   },
   growthLabel: {
     fontFamily: fonts.sansBold,
     fontSize: 10,
-    color: '#797581',
+    color: colors.textMuted,
     letterSpacing: 0.8,
   },
   growthAmount: {
@@ -256,7 +259,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: fonts.sans,
     fontSize: 17,
-    color: '#484550',
+    color: colors.textMuted,
     lineHeight: 24,
     textAlign: 'center',
   },
@@ -274,7 +277,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 16,
     borderRadius: 14,
-    shadowColor: colors.brandNavy,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 14,
@@ -283,6 +286,6 @@ const styles = StyleSheet.create({
   ctaText: {
     fontFamily: fonts.sansBold,
     fontSize: 17,
-    color: colors.brandNavy,
+    color: colors.textOnYellow,
   },
 });
